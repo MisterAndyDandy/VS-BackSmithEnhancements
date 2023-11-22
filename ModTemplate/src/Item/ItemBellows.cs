@@ -1,0 +1,282 @@
+﻿using System;
+using System.Collections.Generic;
+using Vintagestory.API.Client;
+using Vintagestory.API.Common;
+using Vintagestory.API.Common.Entities;
+using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
+using Vintagestory.API.Util;
+using Vintagestory.GameContent;
+
+namespace BlackSmithEnhancements
+{
+
+    class ItemBellow : Item
+    {
+        private WorldInteraction[] interactions;
+
+        public override void OnLoaded(ICoreAPI api)
+        {
+            base.OnLoaded(api);
+
+            interactions = ObjectCacheUtil.GetOrCreate(api, "bellowInteractions", delegate
+            {
+                List<ItemStack> list = new List<ItemStack>();
+                foreach (CollectibleObject items in api.World.Collectibles)
+                {
+                    if (api.World.GetBlock(items.Id) is BlockForge)
+                    {
+                        list.Add(new ItemStack(items));
+                    }
+                }
+
+                return new WorldInteraction[1]
+                {
+                        new WorldInteraction
+                        {
+                            ActionLangCode = "heldhelp-bellow",
+                            MouseButton = EnumMouseButton.Right,
+                            Itemstacks = list.ToArray(),
+                            GetMatchingStacks = delegate(WorldInteraction wi, BlockSelection bs, EntitySelection es) {
+                                return wi.Itemstacks;
+                            }
+                        }
+                };
+            });
+
+        }
+        private static SimpleParticleProperties InitializeSmokeEffect()
+        {
+            SimpleParticleProperties bellowSmoke;
+            bellowSmoke = new SimpleParticleProperties(
+                3, 6,
+                ColorUtil.ToRgba(50, 248, 248, 255), // first alpha, second red, three green, four blue
+                new Vec3d(),
+                new Vec3d(),
+                new Vec3f(-0.01f, 0.05f, -0.01f),
+                new Vec3f(0.05f, 0.1f, 0.05f),
+                2f,
+                0.01f,
+                0.2f,
+                0.5f,
+                EnumParticleModel.Quad
+            )
+            {
+                AddPos = new Vec3d() { }.Set(0.1, 0.1, 0.1),
+                OpacityEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -250f),
+                SizeEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -0.03f),
+                VertexFlags = 100,
+                WindAffected = false,
+                WindAffectednes = 0.1f,
+                ClimateColorMap = null,
+                SelfPropelled = true
+            };
+
+            return bellowSmoke;
+        }
+
+        private static Vec3d GetVec3d(Entity byEntity)
+        {
+            float charView = 0.13f;
+            float ViewoffSet = 0f;
+            float Yaw = byEntity.Pos.Yaw;
+            float Pitch = byEntity.Pos.Pitch;
+
+            if (byEntity.Api.World is IClientWorldAccessor world)
+            {
+
+                if (world.Player.CameraMode != EnumCameraMode.FirstPerson)
+                {
+                    charView = 0f;
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 1.2f, 0).Ahead(1.5f, 3.2f - ViewoffSet, Yaw - ViewoffSet).Ahead(charView, 0f, Yaw + GameMath.PIHALF);
+
+                }
+
+                if (world.Player.CameraMode == EnumCameraMode.FirstPerson)
+                {
+                    ViewoffSet = 0.3f;
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.8f, 0).Ahead(0.6f, Pitch - ViewoffSet, Yaw - ViewoffSet).Ahead(charView, 0f, Yaw + GameMath.PIHALF);
+                }
+
+            }
+
+
+            return new Vec3d(0f,0f,0f);
+           
+        }
+
+        public override string GetHeldTpUseAnimation(ItemSlot activeHotbarSlot, Entity byEntity)
+        {
+            return null;
+        }
+
+        public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
+        {
+            base.OnHeldInteractStart(slot, byEntity, blockSel, entitySel, firstEvent, ref handling);
+
+            if (handling != EnumHandHandling.PreventDefaultAnimation && !firstEvent)
+            {
+                if (slot.Empty) {
+                    return;
+                }
+
+                if (!byEntity.LeftHandItemSlot.Empty)
+                {
+                    string text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
+                    (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text ));
+                    return;
+                }
+
+                if (byEntity.World is IClientWorldAccessor)
+                {
+                    slot.Itemstack.TempAttributes.SetInt("renderVariant", 1);
+                }
+
+                byEntity.Attributes.SetInt("startedBellowing", 1);
+                byEntity.Attributes.SetInt("bellowCancel", 0);
+                slot.Itemstack.Attributes.SetInt("renderVariant", 1);
+                byEntity.AnimManager.StartAnimation("usebellow");
+                handling = EnumHandHandling.PreventDefaultAnimation;
+            }
+        }
+        
+        public override bool OnHeldInteractStep(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel)
+        {
+            int num = GameMath.Clamp((int)Math.Ceiling(secondsUsed * 5f), 0, 2);
+            int @int = slot.Itemstack.Attributes.GetInt("renderVariant");
+            slot.Itemstack.TempAttributes.SetInt("renderVariant", num);
+            slot.Itemstack.Attributes.SetInt("renderVariant", num);
+
+            if (@int != num)
+            {
+                (byEntity as EntityPlayer)?.Player?.InventoryManager.BroadcastHotbarSlot();
+            }
+
+            return secondsUsed < 1.5f;
+        }
+
+        public override bool OnHeldInteractCancel(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, EnumItemUseCancelReason cancelReason)
+        {
+            byEntity.Attributes.SetInt("startedBellowing", 0);
+            byEntity.AnimManager.StopAnimation("usebellow");
+
+            if (byEntity.World is IClientWorldAccessor)
+            {
+                slot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
+            }
+
+            slot.Itemstack.Attributes.SetInt("renderVariant", 0);
+            (byEntity as EntityPlayer)?.Player?.InventoryManager.BroadcastHotbarSlot();
+
+        
+
+            if (cancelReason == EnumItemUseCancelReason.ReleasedMouse)
+            {
+                byEntity.Attributes.SetInt("bellowCancel", 1);
+                return true;
+              
+            }
+
+            return false;
+        }
+
+        public override void OnHeldInteractStop(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel)
+        {
+            ItemStack heldstack = slot.Itemstack;
+
+            if (byEntity.Attributes.GetInt("bellowCancel") == 1)
+            {
+                return;
+            }
+
+            IPlayer dualCallByPlayer = null;
+            if (byEntity is EntityPlayer byPlayer)
+            {
+                dualCallByPlayer = byEntity.World.PlayerByUid(byPlayer.PlayerUID);
+            }
+
+            if (api.World is IClientWorldAccessor)
+            {
+                heldstack.TempAttributes.SetInt("renderVariant", 1);
+            }
+
+            if (secondsUsed < 0.5f) {
+                return;
+            }
+
+            heldstack.Attributes.SetInt("renderVariant", 0);
+            byEntity.AnimManager.StopAnimation("usebellow");
+            (byEntity as EntityPlayer)?.Player?.InventoryManager.BroadcastHotbarSlot();
+
+            if (byEntity.World.Rand.Next(1, 80) < 5)
+            {
+                DamageItem(api.World, byEntity, (byEntity as EntityPlayer)?.Player.InventoryManager.ActiveHotbarSlot, 1);
+                (api as ICoreClientAPI)?.TriggerChatMessage("Bellow been damage");
+            }
+
+            if (api.Side == EnumAppSide.Client)
+            {
+                PlaySound(byEntity.World.Api, byEntity, dualCallByPlayer, Attributes["sound"].AsString());
+                Vec3d pos = GetVec3d(byEntity);
+                SimpleParticleProperties smokeHeld = InitializeSmokeEffect();
+                smokeHeld.MinPos = pos.AddCopy(0, 0.3, 0);
+                byEntity.World.SpawnParticles(smokeHeld);
+            }
+
+            if (blockSel != null && api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityForge blockEntityForge)
+            {
+                ItemStack forgeContents = blockEntityForge.Contents;
+
+                if (!blockEntityForge.IsBurning)
+                {
+                    (api as ICoreClientAPI)?.TriggerIngameError(blockEntityForge.IsBurning == false, "Lit the forge first", Lang.Get("ingameerror-forge-lit"));
+                    return;
+                };
+
+                if (forgeContents == null)
+                {
+                    (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-contents"));
+                    return;
+                }
+
+                float temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
+
+                float tempBoost = 45f;
+
+                if (heldstack.Collectible.Attributes.Exists && heldstack.Collectible.Attributes["tempBoost"].Exists)
+                {
+                    tempBoost = heldstack.Collectible.Attributes["tempBoost"].AsFloat();
+                }
+
+                if (temp < 100f) {
+                    (api as ICoreClientAPI)?.TriggerIngameError(temp < 100f, "Forge temperature isn't right yet", Lang.Get("ingameerror-forge-temp"));
+                    return;
+                }
+
+                if (temp > 1100f)
+                {
+                    return;
+                }
+
+                if (api.Side == EnumAppSide.Server)
+                {
+                    forgeContents.Collectible.SetTemperature(api.World, forgeContents, GameMath.Clamp(tempBoost + GameMath.Min(temp, 1100f), 0f, 1100f), true);
+                    blockEntityForge.MarkDirty(true);
+                }
+
+            }
+
+            byEntity.AnimManager.StartAnimation("finishbellow");
+        }
+
+        private void PlaySound(ICoreAPI api, EntityAgent byEntity, IPlayer player, string name)
+        {
+            api.World.PlaySoundAt(new AssetLocation(Code.Domain, name), byEntity, player, false, 2f, 1f);
+        }
+
+        public override WorldInteraction[] GetHeldInteractionHelp(ItemSlot inSlot)
+        {
+            return interactions.Append(base.GetHeldInteractionHelp(inSlot));
+        }
+    }
+}

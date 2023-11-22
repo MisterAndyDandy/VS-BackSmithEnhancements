@@ -1,0 +1,13 @@
+{
+  "game:ingameerror-forge-lit": "Lit the forge first",
+  "game:ingameerror-forge-temp": "Forge temperature isn't right yet",
+  "game:ingameerror-forge-contents": "Forge missing contents",
+
+  "game:ingameerror-bellow-requires-bothhands-{0}": "Unequip {0} first",
+
+  "game:heldhelp-quenching": "Quenching",
+  "game:heldhelp-bellow": "Bellow",
+
+  "item-bellow": "Bellow",
+  "item-clothes-hand-blacksmith-gloves": "Blacksmith gloves"
+}
