@@ -1,0 +1,26 @@
+[
+  {
+    "ingredientPattern": "LTL,STS",
+    "ingredients": {
+      "L": {
+        "type": "item",
+        "code": "game:leather-plain",
+        "quantity": 3
+      },
+      "T": {
+        "type": "item",
+        "code": "game:flaxtwine"
+      },
+      "S": {
+        "type": "item",
+        "code": "game:cloth-plain"
+      }
+    },
+    "width": 3,
+    "height": 2,
+    "output": {
+      "type": "item",
+      "code": "blacksmithenhancements:clothes-hand-blacksmith-gloves"
+    }
+  }
+]

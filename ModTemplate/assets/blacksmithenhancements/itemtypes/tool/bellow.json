@@ -2,6 +2,15 @@
 	"code": "bellow",
 	"class": "ItemBellow",
 	"attributes": {
+		"handbook": {
+			"include": true,
+			"extraSections": [
+				{
+					"title": "item-handbooktitle-bellow",
+					"text": "item-handbooktext-bellow"
+				}
+			]
+		},
 		"sound": "sounds/items/bellow",
 		"rackable": true,
 		"toolrackTransform": {

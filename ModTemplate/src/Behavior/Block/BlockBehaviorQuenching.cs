@@ -51,7 +51,7 @@ namespace BlackSmithEnhancements
             waterSplash = new WaterSplashParticles();
             return waterSplash;
         }
-
+        
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling)
         {
      
@@ -66,7 +66,7 @@ namespace BlackSmithEnhancements
                     {
                         if (heldStack.Collectible.HasBehavior<ItemBehaviorQuenching>())
                         {
-                                QuenchingItem(world, heldStack, byPlayer, blockSel, (BlockLiquidContainerBase)entityLiquidContainer.Block, entityLiquidContainer, (float)heldStack.Collectible.GetTemperature(world, heldStack));
+                                Quenching(world, heldStack, byPlayer, blockSel, (BlockLiquidContainerBase)entityLiquidContainer.Block, entityLiquidContainer, (float)heldStack.Collectible.GetTemperature(world, heldStack));
                                 heldStack.Collectible.HeldTpUseAnimation = "interactstatic";
                                 secondPasted = world.Calendar.ElapsedSeconds;
                                 handling = EnumHandling.Handled;
@@ -80,7 +80,7 @@ namespace BlackSmithEnhancements
             return false;
         }
     
-        public void QuenchingItem(IWorldAccessor world, ItemStack heldStack, IPlayer byPlayer, BlockSelection blockSel, BlockLiquidContainerBase containerBase, BlockEntityLiquidContainer entityLiquidContainer, float temp)
+        public void Quenching(IWorldAccessor world, ItemStack heldStack, IPlayer byPlayer, BlockSelection blockSel, BlockLiquidContainerBase containerBase, BlockEntityLiquidContainer entityLiquidContainer, float temp)
         {
             long elapsedSeconds = world.Calendar.ElapsedSeconds - secondPasted;
 
@@ -104,7 +104,33 @@ namespace BlackSmithEnhancements
 
         }
 
-        private static void Particles(IWorldAccessor world, Vec3d vec3, SimpleParticleProperties steam, WaterSplashParticles waterSplash) {
+        private static ItemStack IsContentWater(ItemStack[] contentStacks) {
+            if (contentStacks.Length != 0)
+            {
+                string isWater;
+
+                ItemStack itemStack = contentStacks[0] ?? contentStacks[1];
+
+                if (itemStack == null) return null;
+
+                if (itemStack.Collectible.IsLiquid()) {
+
+                    isWater = itemStack.Collectible.FirstCodePart();
+
+                    if (isWater != "waterportion") return null;
+
+                    return itemStack;
+                }
+
+                if (itemStack != null && !itemStack.Collectible.IsLiquid()) return null;
+
+            };
+
+            return null;
+        }
+
+        private static void Particles(IWorldAccessor world, Vec3d vec3, SimpleParticleProperties steam, WaterSplashParticles waterSplash)
+        {
 
             waterSplash.BasePos.Set(vec3);
             waterSplash.AddVelocity.Set(0, 0, 0);
@@ -114,33 +140,5 @@ namespace BlackSmithEnhancements
             world.SpawnParticles(steam);
         }
 
-        private static ItemStack IsContentWater(ItemStack[] contentStacks) {
-            if (contentStacks.Length != 0)
-            {
-                string isWater;
-
-                if (contentStacks[0].Collectible.IsLiquid())
-                {
-                    isWater = contentStacks[0].Collectible.FirstCodePart();
-
-                    if (isWater != "waterportion") return null;
-
-                    return contentStacks[0];
-                }
-
-                if (contentStacks[0] != null && !contentStacks[0].Collectible.IsLiquid()) return null;
-
-                if (contentStacks[1] != null)
-                {
-                    isWater = contentStacks[1].Collectible.FirstCodePart();
-
-                    if (isWater != "waterportion") return null;
-
-                    return contentStacks[1];
-                }
-            };
-
-            return null;
-        }
     }
 }

@@ -13,11 +13,17 @@ namespace BlackSmithEnhancements
 
     class ItemBellow : Item
     {
+  
         private WorldInteraction[] interactions;
-
         public override void OnLoaded(ICoreAPI api)
         {
-            base.OnLoaded(api);
+     
+            if (api.Side != EnumAppSide.Client)
+            {
+                return;
+            }
+
+            _ = api;
 
             interactions = ObjectCacheUtil.GetOrCreate(api, "bellowInteractions", delegate
             {
@@ -45,6 +51,7 @@ namespace BlackSmithEnhancements
             });
 
         }
+
         private static SimpleParticleProperties InitializeSmokeEffect()
         {
             SimpleParticleProperties bellowSmoke;
@@ -79,8 +86,6 @@ namespace BlackSmithEnhancements
         {
             float charView = 0.13f;
             float ViewoffSet = 0f;
-            float Yaw = byEntity.Pos.Yaw;
-            float Pitch = byEntity.Pos.Pitch;
 
             if (byEntity.Api.World is IClientWorldAccessor world)
             {
@@ -88,16 +93,15 @@ namespace BlackSmithEnhancements
                 if (world.Player.CameraMode != EnumCameraMode.FirstPerson)
                 {
                     charView = 0f;
-                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 1.2f, 0).Ahead(1.5f, 3.2f - ViewoffSet, Yaw - ViewoffSet).Ahead(charView, 0f, Yaw + GameMath.PIHALF);
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 1.2f, 0).Ahead(1.5f, 3.2f - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
 
                 }
 
                 if (world.Player.CameraMode == EnumCameraMode.FirstPerson)
                 {
                     ViewoffSet = 0.3f;
-                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.8f, 0).Ahead(0.6f, Pitch - ViewoffSet, Yaw - ViewoffSet).Ahead(charView, 0f, Yaw + GameMath.PIHALF);
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.8f, 0).Ahead(0.6f, byEntity.Pos.Pitch - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
                 }
-
             }
 
 
@@ -123,7 +127,7 @@ namespace BlackSmithEnhancements
                 if (!byEntity.LeftHandItemSlot.Empty)
                 {
                     string text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
-                    (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text ));
+                    (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text.UcFirst()));
                     return;
                 }
 
@@ -211,7 +215,7 @@ namespace BlackSmithEnhancements
             if (byEntity.World.Rand.Next(1, 80) < 5)
             {
                 DamageItem(api.World, byEntity, (byEntity as EntityPlayer)?.Player.InventoryManager.ActiveHotbarSlot, 1);
-                (api as ICoreClientAPI)?.TriggerChatMessage("Bellow been damage");
+                //(api as ICoreClientAPI)?.TriggerChatMessage("Bellow been damage");
             }
 
             if (api.Side == EnumAppSide.Client)
@@ -235,22 +239,19 @@ namespace BlackSmithEnhancements
 
                 if (forgeContents == null)
                 {
-                    (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-contents"));
+                    (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-empty"));
                     return;
                 }
 
                 float temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
 
-                float tempBoost = 45f;
+                float tempdecr = -forgeContents.StackSize * 2;
+
+                float tempBoost = api.World.Rand.Next(15, 30) - tempdecr;
 
                 if (heldstack.Collectible.Attributes.Exists && heldstack.Collectible.Attributes["tempBoost"].Exists)
                 {
                     tempBoost = heldstack.Collectible.Attributes["tempBoost"].AsFloat();
-                }
-
-                if (temp < 100f) {
-                    (api as ICoreClientAPI)?.TriggerIngameError(temp < 100f, "Forge temperature isn't right yet", Lang.Get("ingameerror-forge-temp"));
-                    return;
                 }
 
                 if (temp > 1100f)
