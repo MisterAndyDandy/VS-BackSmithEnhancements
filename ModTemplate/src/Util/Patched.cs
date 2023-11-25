@@ -101,7 +101,7 @@ namespace BlackSmithEnhancements
 
                     if (heldItem != null)
                     {
-                        if (world.GetItem(heldItem.Id) is ItemBellow)
+                        if (heldItem is ItemBellow)
                         {
                             return false;
                         }
@@ -112,4 +112,33 @@ namespace BlackSmithEnhancements
             return true;
         }
     }
+
+    [HarmonyPatch(typeof(BlockEntityFirepit))]
+    [HarmonyPatch("OnPlayerRightClick")]
+    public class OnPlayerRightClick_Patch
+    {
+
+        [HarmonyPrefix]
+        public static bool BlockEntityFirepit(IPlayer byPlayer, BlockSelection blockSel)
+        {
+            if (blockSel != null)
+            {
+                if (!byPlayer.InventoryManager.ActiveHotbarSlot.Empty)
+                {
+                    Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
+
+                    if (heldItem != null)
+                    {
+                        if (heldItem is ItemBellow)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
 }

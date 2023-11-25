@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -204,7 +206,8 @@ namespace BlackSmithEnhancements
                 heldstack.TempAttributes.SetInt("renderVariant", 1);
             }
 
-            if (secondsUsed < 0.5f) {
+            if (secondsUsed < 0.6f)
+            {
                 return;
             }
 
@@ -227,47 +230,143 @@ namespace BlackSmithEnhancements
                 byEntity.World.SpawnParticles(smokeHeld);
             }
 
-            if (blockSel != null && api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityForge blockEntityForge)
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel?.Position) is BlockEntityForge blockEntityForge)
             {
-                ItemStack forgeContents = blockEntityForge.Contents;
-
-                if (!blockEntityForge.IsBurning)
-                {
-                    (api as ICoreClientAPI)?.TriggerIngameError(blockEntityForge.IsBurning == false, "Lit the forge first", Lang.Get("ingameerror-forge-lit"));
-                    return;
-                };
-
-                if (forgeContents == null)
-                {
-                    (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-empty"));
-                    return;
-                }
-
-                float temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
-
-                float tempdecr = -forgeContents.StackSize * 2;
-
-                float tempBoost = api.World.Rand.Next(15, 30) - tempdecr;
-
-                if (heldstack.Collectible.Attributes.Exists && heldstack.Collectible.Attributes["tempBoost"].Exists)
-                {
-                    tempBoost = heldstack.Collectible.Attributes["tempBoost"].AsFloat();
-                }
-
-                if (temp > 1100f)
-                {
-                    return;
-                }
-
-                if (api.Side == EnumAppSide.Server)
-                {
-                    forgeContents.Collectible.SetTemperature(api.World, forgeContents, GameMath.Clamp(tempBoost + GameMath.Min(temp, 1100f), 0f, 1100f), true);
-                    blockEntityForge.MarkDirty(true);
-                }
-
+                Forge(blockEntityForge);
             }
 
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel?.Position) is BlockEntityFirepit blockEntityFirepit)
+            {
+                FirePit(blockEntityFirepit);
+            }
+
+
             byEntity.AnimManager.StartAnimation("finishbellow");
+        }
+
+        private void Forge(BlockEntityForge blockEntityForge) 
+        {
+            ItemStack forgeContents = blockEntityForge.Contents;
+
+            if (!blockEntityForge.IsBurning)
+            {
+                (api as ICoreClientAPI)?.TriggerIngameError(blockEntityForge.IsBurning == false, "Lit the forge first", Lang.Get("ingameerror-forge-lit"));
+                return;
+            };
+
+            if (forgeContents == null)
+            {
+                (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-empty"));
+                return;
+            }
+
+            float temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
+
+            float tempdecr = -forgeContents.StackSize * 2;
+
+            float tempBoost = api.World.Rand.Next(15, 30) - tempdecr;
+
+            if (temp > 1100f)
+            {
+                return;
+            }
+
+            if (api.Side == EnumAppSide.Server)
+            {
+                forgeContents.Collectible.SetTemperature(api.World, forgeContents, GameMath.Clamp(tempBoost + GameMath.Min(temp, 1100f), 0f, 1100f), true);
+                blockEntityForge.MarkDirty(true);
+            }
+
+        }
+
+        private void FirePit(BlockEntityFirepit blockEntityFirepit) {
+
+            IWorldAccessor world = api.World;
+
+            if (world == null) return;
+
+            ItemSlot inputSlot = blockEntityFirepit.inputSlot;
+
+            if (!blockEntityFirepit.IsBurning)
+            {
+                (api as ICoreClientAPI)?.TriggerIngameError(blockEntityFirepit.IsBurning == false, "Lit the firepit first", Lang.Get("ingameerror-firepit-lit"));
+                return;
+            };
+
+            if (inputSlot.Empty)
+            {
+                (api as ICoreClientAPI)?.TriggerIngameError(inputSlot.Empty, "Forge missing contents", Lang.Get("ingameerror-firepit-empty"));
+                return;
+            }
+
+            if (api.Side == EnumAppSide.Server)
+            {
+                float timeToCook = blockEntityFirepit.maxCookingTime();
+
+                float cookingTime = blockEntityFirepit.inputStackCookingTime;
+
+                float container = blockEntityFirepit.InputStackTemp;
+
+                if (inputSlot.Itemstack.Block is BlockSmeltingContainer smeltingContainer)
+                {
+                    if (blockEntityFirepit.Inventory is not ISlotProvider slotProvider) return;
+
+                    ItemStack ingredientStack = HasIngredients(smeltingContainer.GetIngredients(world, slotProvider));
+                 
+                    if (ingredientStack != null)
+                    {
+                        if (cookingTime < timeToCook)
+                        {
+                            float melthingPoint = smeltingContainer.GetMeltingPoint(world, slotProvider, inputSlot);
+
+                            if(melthingPoint > container) // Is not ready to start smelting it yet so keep adding temp to it.
+                            {
+                                for (int i = 0; i < slotProvider.Slots.Length; ++i)
+                                {
+
+                                    if (slotProvider.Slots[i].Empty) continue;
+
+                                    ingredientStack = slotProvider.Slots[i].Itemstack;
+
+                                    ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(45, 85) + GameMath.Min(container, melthingPoint), 0f, melthingPoint), true);
+
+                                }
+                            }
+
+                            if (cookingTime < timeToCook)
+                            {
+                                if (melthingPoint < container)
+                                {
+                                    blockEntityFirepit.inputStackCookingTime = cookingTime + api.World.Rand.Next(5, 10);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (inputSlot.Itemstack?.Block is BlockSmeltedContainer smeltedContainer) {
+                    smeltedContainer.SetTemperature(world, new ItemStack(smeltedContainer), GameMath.Clamp(api.World.Rand.Next(50, 100) + GameMath.Min(container, blockEntityFirepit.maxTemperature), 0f, blockEntityFirepit.maxTemperature), true);
+                }
+
+                blockEntityFirepit.MarkDirty(true);
+            }
+        }
+
+        private static ItemStack HasIngredients(ItemStack[] Ingredients) {
+            if (Ingredients.Length > 0) { 
+                for (int i = 0; i < Ingredients.Length; i++)
+                {
+                    if (Ingredients[i] == null)
+                    {
+                        continue;
+                    }
+
+                    return Ingredients[i];
+                    
+                }
+            }
+
+            return null;
         }
 
         private void PlaySound(ICoreAPI api, EntityAgent byEntity, IPlayer player, string name)
