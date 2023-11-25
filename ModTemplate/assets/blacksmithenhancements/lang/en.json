@@ -2,6 +2,9 @@
   "game:ingameerror-forge-lit": "Lit the forge",
   "game:ingameerror-forge-empty": "Forge is empty",
 
+  "game:ingameerror-firepit-lit": "Lit the firepit",
+  "game:ingameerror-firepit-empty": "Firepit is empty",
+
   "game:ingameerror-bellow-requires-bothhands-{0}": "Unequip {0} first",
 
   "game:heldhelp-quenching": "Quenching",

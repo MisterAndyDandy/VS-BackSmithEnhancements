@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Numerics;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -9,6 +10,7 @@ using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
 using Vintagestory.GameContent;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BlackSmithEnhancements
 {
@@ -119,7 +121,7 @@ namespace BlackSmithEnhancements
         public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
         {
             base.OnHeldInteractStart(slot, byEntity, blockSel, entitySel, firstEvent, ref handling);
-
+  
             if (handling != EnumHandHandling.PreventDefaultAnimation && !firstEvent)
             {
                 if (slot.Empty) {
@@ -295,7 +297,7 @@ namespace BlackSmithEnhancements
 
             if (inputSlot.Empty)
             {
-                (api as ICoreClientAPI)?.TriggerIngameError(inputSlot.Empty, "Forge missing contents", Lang.Get("ingameerror-firepit-empty"));
+                (api as ICoreClientAPI)?.TriggerIngameError(inputSlot.Empty, "firepit empty", Lang.Get("ingameerror-firepit-empty"));
                 return;
             }
 
@@ -305,7 +307,7 @@ namespace BlackSmithEnhancements
 
                 float cookingTime = blockEntityFirepit.inputStackCookingTime;
 
-                float container = blockEntityFirepit.InputStackTemp;
+                float stackTemp = blockEntityFirepit.InputStackTemp;
 
                 if (inputSlot.Itemstack.Block is BlockSmeltingContainer smeltingContainer)
                 {
@@ -319,7 +321,7 @@ namespace BlackSmithEnhancements
                         {
                             float melthingPoint = smeltingContainer.GetMeltingPoint(world, slotProvider, inputSlot);
 
-                            if(melthingPoint > container) // Is not ready to start smelting it yet so keep adding temp to it.
+                            if(melthingPoint > stackTemp) // Is not ready to start smelting it yet so keep adding temp to it.
                             {
                                 for (int i = 0; i < slotProvider.Slots.Length; ++i)
                                 {
@@ -328,14 +330,14 @@ namespace BlackSmithEnhancements
 
                                     ingredientStack = slotProvider.Slots[i].Itemstack;
 
-                                    ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(45, 85) + GameMath.Min(container, melthingPoint), 0f, melthingPoint), true);
+                                    ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(45, 85) + GameMath.Min(stackTemp, melthingPoint), 0f, melthingPoint), true);
 
                                 }
                             }
 
-                            if (cookingTime < timeToCook)
+                            if (timeToCook < cookingTime)
                             {
-                                if (melthingPoint < container)
+                                if (melthingPoint < stackTemp)
                                 {
                                     blockEntityFirepit.inputStackCookingTime = cookingTime + api.World.Rand.Next(5, 10);
                                 }
@@ -345,10 +347,16 @@ namespace BlackSmithEnhancements
                 }
 
                 if (inputSlot.Itemstack?.Block is BlockSmeltedContainer smeltedContainer) {
-                    smeltedContainer.SetTemperature(world, new ItemStack(smeltedContainer), GameMath.Clamp(api.World.Rand.Next(50, 100) + GameMath.Min(container, blockEntityFirepit.maxTemperature), 0f, blockEntityFirepit.maxTemperature), true);
+                    smeltedContainer.SetTemperature(world, new ItemStack(smeltedContainer), GameMath.Clamp(api.World.Rand.Next(50, 100) + GameMath.Min(stackTemp, blockEntityFirepit.maxTemperature), 0f, blockEntityFirepit.maxTemperature), true);
                 }
 
-                blockEntityFirepit.MarkDirty(true);
+                //if (inputSlot.Itemstack.Collectible.CombustibleProps != null) {
+
+                //    if (timeToCook < cookingTime)
+                //    {
+                //        blockEntityFirepit.inputStackCookingTime = cookingTime + api.World.Rand.Next(2, 8);
+                //    }
+                //}
             }
         }
 

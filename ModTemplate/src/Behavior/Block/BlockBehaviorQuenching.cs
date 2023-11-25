@@ -1,4 +1,5 @@
 ﻿using System;
+using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
@@ -54,7 +55,8 @@ namespace BlackSmithEnhancements
         
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling)
         {
-     
+            base.OnBlockInteractStart(world, byPlayer, blockSel, ref handling);
+
             if (blockSel != null && !byPlayer.Entity.RightHandItemSlot.Empty)
             {
                 if (block.GetBlockEntity<BlockEntityLiquidContainer>(blockSel) is BlockEntityLiquidContainer entityLiquidContainer)
