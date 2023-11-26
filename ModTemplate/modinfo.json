@@ -5,7 +5,7 @@
   "description": "",
   "authors": [ "Mister Andy Dandy" ],
   "Contributors": [ "" ],
-  "version": "1.0.1",
+  "version": "1.0.3",
   "dependencies": {
     "game": "1.18.15"
   }

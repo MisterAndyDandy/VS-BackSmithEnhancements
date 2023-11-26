@@ -208,7 +208,7 @@ namespace BlackSmithEnhancements
                 heldstack.TempAttributes.SetInt("renderVariant", 1);
             }
 
-            if (secondsUsed < 0.6f)
+            if (secondsUsed < 1f)
             {
                 return;
             }
@@ -232,18 +232,19 @@ namespace BlackSmithEnhancements
                 byEntity.World.SpawnParticles(smokeHeld);
             }
 
-            if (api.World.BlockAccessor.GetBlockEntity(blockSel?.Position) is BlockEntityForge blockEntityForge)
+            byEntity.AnimManager.StartAnimation("finishbellow");
+
+            if (blockSel == null) return;
+
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityForge blockEntityForge)
             {
                 Forge(blockEntityForge);
             }
 
-            if (api.World.BlockAccessor.GetBlockEntity(blockSel?.Position) is BlockEntityFirepit blockEntityFirepit)
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityFirepit blockEntityFirepit)
             {
                 FirePit(blockEntityFirepit);
             }
-
-
-            byEntity.AnimManager.StartAnimation("finishbellow");
         }
 
         private void Forge(BlockEntityForge blockEntityForge) 
@@ -303,60 +304,60 @@ namespace BlackSmithEnhancements
 
             if (api.Side == EnumAppSide.Server)
             {
-                float timeToCook = blockEntityFirepit.maxCookingTime();
-
                 float cookingTime = blockEntityFirepit.inputStackCookingTime;
 
                 float stackTemp = blockEntityFirepit.InputStackTemp;
 
-                if (inputSlot.Itemstack.Block is BlockSmeltingContainer smeltingContainer)
+                float fuelTemp = blockEntityFirepit.furnaceTemperature;
+
+                float bonusNumber = 1f; // ToDo add config
+
+                //if (fuelTemp < blockEntityFirepit.maxTemperature) {
+                //    blockEntityFirepit.maxTemperature = (int)(fuelTemp + 50);
+                //}
+
+                if (inputSlot.Itemstack.Collectible is BlockSmeltingContainer smeltingContainer)
                 {
                     if (blockEntityFirepit.Inventory is not ISlotProvider slotProvider) return;
 
                     ItemStack ingredientStack = HasIngredients(smeltingContainer.GetIngredients(world, slotProvider));
-                 
+
                     if (ingredientStack != null)
                     {
-                        if (cookingTime < timeToCook)
+                        float melthingPoint = smeltingContainer.GetMeltingPoint(world, slotProvider, inputSlot);
+
+
+                        if (fuelTemp < melthingPoint)
                         {
-                            float melthingPoint = smeltingContainer.GetMeltingPoint(world, slotProvider, inputSlot);
-
-                            if(melthingPoint > stackTemp) // Is not ready to start smelting it yet so keep adding temp to it.
+                            for (int i = 0; i < slotProvider.Slots.Length; ++i)
                             {
-                                for (int i = 0; i < slotProvider.Slots.Length; ++i)
-                                {
 
-                                    if (slotProvider.Slots[i].Empty) continue;
+                                if (slotProvider.Slots[i].Empty) continue;
 
-                                    ingredientStack = slotProvider.Slots[i].Itemstack;
+                                ingredientStack = slotProvider.Slots[i].Itemstack;
 
-                                    ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(45, 85) + GameMath.Min(stackTemp, melthingPoint), 0f, melthingPoint), true);
+                                ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(100) + GameMath.Min(stackTemp, fuelTemp), 0f, fuelTemp), false);
 
-                                }
                             }
-
-                            if (timeToCook < cookingTime)
-                            {
-                                if (melthingPoint < stackTemp)
-                                {
-                                    blockEntityFirepit.inputStackCookingTime = cookingTime + api.World.Rand.Next(5, 10);
-                                }
-                            }
+                        };
+                 
+                        if (cookingTime > 1)
+                        {
+                            bonusNumber = 1.35f;  // ToDo add crucible config float
                         }
+
                     }
                 }
 
-                if (inputSlot.Itemstack?.Block is BlockSmeltedContainer smeltedContainer) {
-                    smeltedContainer.SetTemperature(world, new ItemStack(smeltedContainer), GameMath.Clamp(api.World.Rand.Next(50, 100) + GameMath.Min(stackTemp, blockEntityFirepit.maxTemperature), 0f, blockEntityFirepit.maxTemperature), true);
+                if (inputSlot.Itemstack.Collectible is BlockSmeltedContainer) {
+                    inputSlot.Itemstack.Collectible.SetTemperature(world, inputSlot.Itemstack, GameMath.Clamp(api.World.Rand.Next(100) + GameMath.Min(stackTemp, fuelTemp), 0f, fuelTemp), false);
                 }
 
-                //if (inputSlot.Itemstack.Collectible.CombustibleProps != null) {
+                if (cookingTime > 1)
+                {
+                    blockEntityFirepit.inputStackCookingTime = cookingTime + bonusNumber;
+                }
 
-                //    if (timeToCook < cookingTime)
-                //    {
-                //        blockEntityFirepit.inputStackCookingTime = cookingTime + api.World.Rand.Next(2, 8);
-                //    }
-                //}
             }
         }
 
