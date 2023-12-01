@@ -16,5 +16,5 @@
 
   "item-bellow": "Bellow",
   "game:item-handbooktitle-bellow": "How to Use",
-  "game:item-handbooktext-bellow": "Use on a <font weight=\"bold\"><a href=\"handbook://block-forge\">Forge</a></font> to increase the temperature."
+  "game:item-handbooktext-bellow": "Use on a <font weight=\"bold\"><a href=\"handbook://block-forge\">Forge</a></font> or <font weight=\"bold\"><a href=\"handbook://block-firepit\">Firepit</a></font> to increase the temperature/cooking/smelting."
 }

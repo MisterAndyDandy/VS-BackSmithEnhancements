@@ -52,7 +52,55 @@ namespace BlackSmithEnhancements
             waterSplash = new WaterSplashParticles();
             return waterSplash;
         }
-        
+
+        //public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handHandling, ref EnumHandling handling)
+        //{
+           
+        //    if (blockSel != null || byEntity.Controls.ShiftKey)
+        //    {
+        //        IWorldAccessor world = byEntity.World;
+
+        //        if (world == null) return;
+
+        //        IPlayer byPlayer = world.PlayerByUid((byEntity as EntityPlayer)?.PlayerUID);
+
+        //        if (byPlayer == null) return;
+
+
+        //        long elapsedSeconds = world.Calendar.ElapsedSeconds - secondPasted;
+
+
+
+        //        if (block.GetBlockEntity<BlockEntityGroundStorage>(blockSel) is BlockEntityGroundStorage groundStorage)
+        //        {
+        //            ItemStack blockStack = new ItemStack(groundStorage.Block);
+
+        //            if (blockStack == null) return;
+
+        //            float temp = blockStack.Collectible.GetTemperature(world, blockStack);
+
+        //            if (blockStack.Collectible.HasTemperature(blockStack) && temp > 20.1f)
+        //            {
+
+        //                if (elapsedSeconds > 100)
+        //                {
+        //                    if (world.Side == EnumAppSide.Client)
+        //                    {
+        //                        world.PlaySoundAt(new AssetLocation("sounds/sizzle"), blockSel.FullPosition.X, blockSel.FullPosition.Y, blockSel.FullPosition.Z, byPlayer.Entity.World.PlayerByUid(byPlayer.Entity.PlayerUID), 1f, 4f, 0.8f);
+        //                        Particles(world, new Vec3d(groundStorage.Pos.X + 0.5f, groundStorage.Pos.Y + 0.25f, groundStorage.Pos.Z + 0.5f), InitializeSteamEffect(), InitializeWaterSplashEffect());
+        //                    }
+        //                }
+
+        //                blockStack.Collectible.SetTemperature(world, blockStack, GameMath.Max(0, temp - Math.Max(0f, GameMath.Max(0f, world.Rand.Next(10, 100)))), true);
+        //                slot.Itemstack.Collectible.HeldTpUseAnimation = "interactstatic";
+        //                secondPasted = world.Calendar.ElapsedSeconds;
+        //                handling = EnumHandling.Handled;
+        //            };
+        //        }
+        //    }
+        //}
+
+
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel, ref EnumHandling handling)
         {
             base.OnBlockInteractStart(world, byPlayer, blockSel, ref handling);
@@ -100,7 +148,6 @@ namespace BlackSmithEnhancements
                     Particles(world, new Vec3d(entityLiquidContainer.Pos.X + 0.5f, entityLiquidContainer.Pos.Y + 0.25f, entityLiquidContainer.Pos.Z + 0.5f), InitializeSteamEffect(), InitializeWaterSplashEffect());
                 }
             }
-
             //containerBase.TryTakeContent(blockSel.Position, (int)Math.Ceiling(0.05f * BlockLiquidContainerBase.GetContainableProps(contentStacks).ItemsPerLitre)); will do something later
             heldStack.Collectible.SetTemperature(world, heldStack, GameMath.Max(0, temp - Math.Max(0f, GameMath.Max(0f, world.Rand.Next(10, 100)))), true);
 

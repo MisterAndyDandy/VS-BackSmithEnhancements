@@ -4,26 +4,36 @@ using Vintagestory.API.Util;
 using System.Linq;
 using System.Reflection;
 using Vintagestory.GameContent;
+using Vintagestory.API.Client;
+using System.Collections.Generic;
+using System.Drawing;
 
 namespace BlackSmithEnhancements
 {
-
     class BlackSmithEnhancementsCore : ModSystem
     {
         Harmony harmony = new Harmony("com.misterandydandy.black.smith.addons");
+
+  
 
         public override void Start(ICoreAPI api)
         {
             base.Start(api);
 
+            api.RegisterEntityBehaviorClass("entityparticles", typeof(EntityBehaviorParticles));
+
             api.RegisterItemClass("ItemBellow", typeof(ItemBellow));
+
+            api.RegisterBlockEntityBehaviorClass("Insulated", typeof(BlockEntityBehaviorInsulated));
 
             api.RegisterBlockBehaviorClass("Quenching", typeof(BlockBehaviorQuenching));
 
             api.RegisterCollectibleBehaviorClass("ItemQuenching", typeof(ItemBehaviorQuenching));
 
+
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
+
 
         public override void AssetsFinalize(ICoreAPI api)
         {
@@ -35,6 +45,28 @@ namespace BlackSmithEnhancements
                 {
                     block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorQuenching(block));
                 }
+
+                //if (api.Side == EnumAppSide.Server)
+                //{
+                //    if (block is BlockGenericTypedContainer typedContainer)
+                //    {
+                //        BlockEntityGenericTypedContainer entityGenericTypedContainer = new BlockEntityGenericTypedContainer { Block = typedContainer };
+
+                //        if (block.FirstCodePart() == "chest")
+                //        {
+                //            if (typedContainer.Attributes != null)
+                //            {
+                //                bool flag = typedContainer.Attributes["Insulated"][entityGenericTypedContainer.type].AsBool();
+                //                if (flag)
+                //                {
+                //                    block.BlockBehaviors = block.BlockBehaviors.Append(new BlockBehaviorInsulated(typedContainer));
+                //                }
+                //            }
+                //        }
+
+                //    }
+                //}
+               
             }
 
             foreach (SmithingRecipe smithing in api.GetSmithingRecipes())
@@ -52,15 +84,16 @@ namespace BlackSmithEnhancements
 
             foreach (CollectibleObject colObj in api.World.Collectibles)
             {
-            
                 if (colObj.HasBehavior<ItemBehaviorQuenching>()) continue;
 
                 bool flag = colObj.Attributes?.IsTrue("forgable") ?? false;
 
-                if (colObj.Tool.HasValue || colObj is ItemIngot or ItemMetalPlate or ItemWorkItem || flag)
+                if (colObj.Tool.HasValue || colObj is ItemIngot or ItemMetalPlate or ItemWorkItem or BlockSmeltedContainer || flag)
                 {
                     colObj.CollectibleBehaviors = colObj.CollectibleBehaviors.Append(new ItemBehaviorQuenching(colObj));
                 }
+
+
             }
         }
 
