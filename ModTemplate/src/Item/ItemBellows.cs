@@ -17,7 +17,7 @@ namespace BlackSmithEnhancements
     class ItemBellow : Item
     {
 
-        public float bonusNumber
+        public float BonusNumber
         {
             get
             {
@@ -333,7 +333,7 @@ namespace BlackSmithEnhancements
 
                 float fuelTemp = blockEntityFirepit.furnaceTemperature;
 
-                bonusNumber = 1f; // cooking time bonus
+                BonusNumber = 1f; // cooking time bonus
 
                 if (inputSlot.Itemstack.Collectible is BlockSmeltingContainer smeltingContainer)
                 {
@@ -342,7 +342,7 @@ namespace BlackSmithEnhancements
 
                 if (inputSlot.Itemstack.Collectible is BlockCookingContainer)
                 {
-                    bonusNumber = 1.1f;
+                    BonusNumber = 1.1f;
                 }
 
                 if (inputSlot.Itemstack.Collectible is BlockSmeltedContainer) {
@@ -354,7 +354,7 @@ namespace BlackSmithEnhancements
                 if (cookingTime > 1)
                 {
                
-                    blockEntityFirepit.inputStackCookingTime = cookingTime + bonusNumber;
+                    blockEntityFirepit.inputStackCookingTime = cookingTime + BonusNumber;
 
                     if (inputSlot.Itemstack.Collectible is not BlockSmeltedContainer or BlockCookingContainer or BlockSmeltingContainer)
                     {
@@ -396,7 +396,7 @@ namespace BlackSmithEnhancements
 
                 if (blockEntityFirepit.inputStackCookingTime > 1)
                 {
-                    bonusNumber = 1.35f;
+                    BonusNumber = 1.35f;
                 }
             }
 

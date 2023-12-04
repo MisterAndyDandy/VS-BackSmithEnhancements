@@ -11,10 +11,23 @@ namespace BlackSmithEnhancements
 {
     public class BlockEntityBehaviorInsulated : BlockEntityBehavior
     {
-        BlockEntityGenericTypedContainer entityGenericTypedContainer;
+        private readonly BlockEntityGenericTypedContainer entityGenericTypedContainer;
+
+        public double nowHours;
+
+        public double hourDiff;
+
+        public double lastUpdateHours;
+
         public BlockEntityBehaviorInsulated(BlockEntity blockentity) : base(blockentity)
         {
-           entityGenericTypedContainer = blockentity as BlockEntityGenericTypedContainer;
+            entityGenericTypedContainer = blockentity as BlockEntityGenericTypedContainer;
+
+            nowHours = 0;
+
+            lastUpdateHours = 0;
+
+            hourDiff = 0;
         }
     
         public static SimpleParticleProperties InitializeSteamEffect()
@@ -50,53 +63,51 @@ namespace BlackSmithEnhancements
 
         public override void Initialize(ICoreAPI api, JsonObject properties)
         {
-      
             base.Initialize(api, properties);
 
-            if (api != null)
-            {
-                api.World.RegisterGameTickListener(OnGameTick, 70);
-            }
+            if (entityGenericTypedContainer == null) return;
+
+            api.World.RegisterGameTickListener(OnGameTick, 100);
         }
 
-        public void OnGameTick(float dt) {
-           _ = dt;
+        public void OnGameTick(float dt) 
+        {
+            if (entityGenericTypedContainer.Block.Code.FirstCodePart() != "chest") return;
 
-            if (entityGenericTypedContainer != null)
+            if (entityGenericTypedContainer.Block.Attributes["Insulated"][entityGenericTypedContainer.type].AsBool())
             {
-                if (entityGenericTypedContainer.Block.Code.FirstCodePart() == "chest")
+                for (int i = 0; i < entityGenericTypedContainer.Inventory.Count; i++)
                 {
-                    if (entityGenericTypedContainer.Block.Attributes["Insulated"][entityGenericTypedContainer.type].AsBool())
+                    ItemSlot itemSlot = entityGenericTypedContainer.Inventory[i];
+
+                    if (itemSlot.Empty)
                     {
-                        InventoryBase inventory = entityGenericTypedContainer.Inventory;
-                        if (inventory != null)
-                        {
-                            if (inventory.Count > 0)
-                            {
-                                for (int i = 0; i < inventory.Count; i++)
-                                {
-                                    if (inventory[i].Empty)
-                                    {
-                                        continue;
-                                    }
-
-                                    ItemSlot itemSlot = inventory[i];
-
-                                    if (itemSlot.Itemstack != null) { }
-
-                                }
-                            }
-                        }
+                        continue;
                     }
+
+                    ItemStack itemStack = itemSlot.Itemstack;
+
+                    float temp = itemStack.Collectible.GetTemperature(Api.World, itemStack);
+
+                    if (temp < 20f) continue;
+
+                    if (itemStack.Attributes["temperature"] is not ITreeAttribute attr) return;
+
+                    nowHours = Api.World.Calendar.TotalHours;
+
+                    if(nowHours < 0) { nowHours = 0; }
+
+                    lastUpdateHours = attr.GetDouble("temperatureLastUpdate");
+
+                    hourDiff = nowHours - lastUpdateHours;
+
+                    double tempDiff = (temp / lastUpdateHours / temp) + ( -hourDiff * 2 * 10f);
+
+                    itemStack.Collectible.SetTemperature(Api.World, itemStack, (float)GameMath.Clamp(tempDiff + GameMath.Min(temp, 1100f), 0f, 1100f), false);
+
+                    entityGenericTypedContainer.MarkDirty();
                 }
             }
         }
-
-        private static void Particles(IWorldAccessor world, Vec3d vec3, SimpleParticleProperties steam)
-        {
-            steam.MinPos = vec3;
-            world.SpawnParticles(steam);
-        }
-
     }
 }
