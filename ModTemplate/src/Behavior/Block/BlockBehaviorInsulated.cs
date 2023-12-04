@@ -1,10 +1,8 @@
 ﻿using System;
-using Vintagestory.API.Client;
+using System.Text;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using Vintagestory.API.Server;
 using Vintagestory.GameContent;
 
 namespace BlackSmithEnhancements
@@ -18,6 +16,8 @@ namespace BlackSmithEnhancements
         public double hourDiff;
 
         public double lastUpdateHours;
+
+        private float lastUpdateTemp;
 
         public BlockEntityBehaviorInsulated(BlockEntity blockentity) : base(blockentity)
         {
@@ -105,9 +105,21 @@ namespace BlackSmithEnhancements
 
                     itemStack.Collectible.SetTemperature(Api.World, itemStack, (float)GameMath.Clamp(tempDiff + GameMath.Min(temp, 1100f), 0f, 1100f), false);
 
+                    lastUpdateTemp = temp;
+
                     entityGenericTypedContainer.MarkDirty();
                 }
             }
         }
+
+
+        public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
+        {
+            dsc.AppendFormat("Contents - temperature: " + (int)lastUpdateTemp, 20.3f > lastUpdateTemp);
+            dsc.AppendLine();
+            base.GetBlockInfo(forPlayer, dsc);
+
+        }
+
     }
 }
