@@ -113,6 +113,8 @@ namespace BlackSmithEnhancements
             return true;
         }
     }
+
+
     // to remove unwanted types
     //[HarmonyPatch(typeof(GuiHandbookItemStackPage), "RenderListEntryTo", MethodType.Normal)]
     //public class Class_GuiHandbook_Patch

@@ -14,8 +14,6 @@ namespace BlackSmithEnhancements
     {
         Harmony harmony = new Harmony("com.misterandydandy.black.smith.addons");
 
-  
-
         public override void Start(ICoreAPI api)
         {
             base.Start(api);
@@ -24,9 +22,10 @@ namespace BlackSmithEnhancements
 
             api.RegisterItemClass("ItemBellow", typeof(ItemBellow));
 
-            api.RegisterBlockEntityBehaviorClass("Insulated", typeof(BlockEntityBehaviorInsulated));
+            //api.RegisterBlockEntityBehaviorClass("Insulated", typeof(BlockEntityBehaviorInsulated));
 
             api.RegisterBlockBehaviorClass("Quenching", typeof(BlockBehaviorQuenching));
+
 
             api.RegisterCollectibleBehaviorClass("ItemQuenching", typeof(ItemBehaviorQuenching));
 
@@ -93,7 +92,6 @@ namespace BlackSmithEnhancements
                     colObj.CollectibleBehaviors = colObj.CollectibleBehaviors.Append(new ItemBehaviorQuenching(colObj));
                 }
 
-
             }
         }
 
@@ -105,8 +103,6 @@ namespace BlackSmithEnhancements
 
     }
 }
-
-
 
 //namespace QPClientTools
 //{

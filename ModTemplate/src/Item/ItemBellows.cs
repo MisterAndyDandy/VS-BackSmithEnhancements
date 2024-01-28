@@ -17,26 +17,7 @@ namespace BlackSmithEnhancements
     class ItemBellow : Item
     {
 
-        public float BonusNumber
-        {
-            get
-            {
-                if (Attributes.Exists) 
-                {
-                    if (Attributes["bonusNumber"].Exists)
-                    {
-                        return Attributes["bonusNumber"].AsFloat();
-                    }
-                }
-
-                return 1;
-            }
-            set 
-            { 
-                return; 
-            }
-        }
-
+        public float cooktimeBonus = 1;
 
         private WorldInteraction[] interactions;
 
@@ -126,7 +107,7 @@ namespace BlackSmithEnhancements
 
                 if (world.Player.CameraMode == EnumCameraMode.FirstPerson)
                 {
-                    ViewoffSet = 0.3f;
+                    ViewoffSet = -0.15f;
                     return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.8f, 0).Ahead(0.6f, byEntity.Pos.Pitch - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
                 }
             }
@@ -135,17 +116,17 @@ namespace BlackSmithEnhancements
             return new Vec3d(0f,0f,0f);
            
         }
-
+     
         public override string GetHeldTpUseAnimation(ItemSlot activeHotbarSlot, Entity byEntity)
         {
             return null;
         }
-
+        
         public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
         {
             base.OnHeldInteractStart(slot, byEntity, blockSel, entitySel, firstEvent, ref handling);
   
-            if (handling != EnumHandHandling.PreventDefaultAnimation && !firstEvent)
+            if (handling != EnumHandHandling.PreventDefault)
             {
                 if (slot.Empty) {
                     return;
@@ -167,7 +148,7 @@ namespace BlackSmithEnhancements
                 byEntity.Attributes.SetInt("bellowCancel", 0);
                 slot.Itemstack.Attributes.SetInt("renderVariant", 1);
                 byEntity.AnimManager.StartAnimation("usebellow");
-                handling = EnumHandHandling.PreventDefaultAnimation;
+                handling = EnumHandHandling.PreventDefault;
             }
         }
         
@@ -333,19 +314,18 @@ namespace BlackSmithEnhancements
 
                 float fuelTemp = blockEntityFirepit.furnaceTemperature;
 
-                BonusNumber = 1f; // cooking time bonus
-
-                if (inputSlot.Itemstack.Collectible is BlockSmeltingContainer smeltingContainer)
+                if (inputSlot.Itemstack.Collectible is BlockSmeltingContainer)
                 {
-                    GetSmeltingContainer(smeltingContainer, blockEntityFirepit, inputSlot, fuelTemp, stackTemp);
+                    cooktimeBonus = 3f;
                 }
 
                 if (inputSlot.Itemstack.Collectible is BlockCookingContainer)
                 {
-                    BonusNumber = 1.1f;
+                    cooktimeBonus = 1.25f;
                 }
 
-                if (inputSlot.Itemstack.Collectible is BlockSmeltedContainer) {
+                if (inputSlot.Itemstack.Collectible is BlockSmeltedContainer)
+                {
                     float min = GameMath.Min(stackTemp, fuelTemp); // always stay within the min value between stackTemp, fuelTemp.. I think that what it does? :D
                     float random = api.World.Rand.Next(100); // < pick a number within 100
                     inputSlot.Itemstack.Collectible.SetTemperature(world, inputSlot.Itemstack, GameMath.Clamp(random + min, 0f, fuelTemp), false); // let set the temp to this.
@@ -354,69 +334,19 @@ namespace BlackSmithEnhancements
                 if (cookingTime > 1)
                 {
                
-                    blockEntityFirepit.inputStackCookingTime = cookingTime + BonusNumber;
+                    blockEntityFirepit.inputStackCookingTime = cookingTime + cooktimeBonus;
 
-                    if (inputSlot.Itemstack.Collectible is not BlockSmeltedContainer or BlockCookingContainer or BlockSmeltingContainer)
+                    // burned things
+                    /*if (inputSlot.Itemstack.Collectible is not BlockSmeltedContainer or BlockCookingContainer or BlockSmeltingContainer)
                     {
                         if (api.World.Rand.Next(14, 100) < 15)
                         {
                             inputSlot.TakeOut(1);
                         }
                     }
-                }
-
-            }
-        }
-
-        private void GetSmeltingContainer(BlockSmeltingContainer smeltingContainer, BlockEntityFirepit blockEntityFirepit, ItemSlot inputSlot, float fuelTemp, float stackTemp)
-        {
-            IWorldAccessor world = blockEntityFirepit.Api.World;
-
-            if (blockEntityFirepit.Inventory is not ISlotProvider slotProvider) return;
-
-            ItemStack ingredientStack = HasIngredients(smeltingContainer.GetIngredients(world, slotProvider));
-
-            if (ingredientStack != null)
-            {
-                float melthingPoint = smeltingContainer.GetMeltingPoint(world, slotProvider, inputSlot);
-
-                if (fuelTemp < melthingPoint)
-                {
-                    for (int i = 0; i < slotProvider.Slots.Length; ++i)
-                    {
-
-                        if (slotProvider.Slots[i].Empty) continue;
-
-                        ingredientStack = slotProvider.Slots[i].Itemstack;
-
-                        ingredientStack.Collectible.SetTemperature(world, ingredientStack, GameMath.Clamp(api.World.Rand.Next(100) + GameMath.Min(stackTemp, fuelTemp), 0f, fuelTemp), false);
-
-                    }
-                };
-
-                if (blockEntityFirepit.inputStackCookingTime > 1)
-                {
-                    BonusNumber = 1.35f;
+                    */
                 }
             }
-
-        }
-
-        private static ItemStack HasIngredients(ItemStack[] Ingredients) {
-            if (Ingredients.Length > 0) { 
-                for (int i = 0; i < Ingredients.Length; i++)
-                {
-                    if (Ingredients[i] == null)
-                    {
-                        continue;
-                    }
-
-                    return Ingredients[i];
-                    
-                }
-            }
-
-            return null;
         }
 
         private void PlaySound(ICoreAPI api, EntityAgent byEntity, IPlayer player, string name)

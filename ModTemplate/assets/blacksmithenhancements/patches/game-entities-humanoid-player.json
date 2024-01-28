@@ -15,15 +15,15 @@
         "LowerArmR": 15,
         "UpperArmL": 15,
         "LowerArmL": 15,
-		"Neck": 15,
+		    "Neck": 15,
         "Head": 15
       },
       "elementBlendMode": {
-		"UpperTorso": "AddAverage",
+		    "UpperTorso": "AddAverage",
         "LowerArmR": "AddAverage",
         "UpperArmL": "AddAverage",
         "LowerArmL": "AddAverage",
-		"UpperArmR": "AddAverage",
+		    "UpperArmR": "AddAverage",
         "Neck": "AddAverage",
         "Head": "AddAverage"
       }
