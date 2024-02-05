@@ -18,7 +18,7 @@ namespace BlackSmithEnhancements
         {
             base.Start(api);
 
-            api.RegisterEntityBehaviorClass("entityparticles", typeof(EntityBehaviorParticles));
+            //api.RegisterEntityBehaviorClass("entityparticles", typeof(EntityBehaviorParticles));
 
             api.RegisterItemClass("ItemBellow", typeof(ItemBellow));
 
@@ -86,7 +86,7 @@ namespace BlackSmithEnhancements
                 if (colObj.HasBehavior<ItemBehaviorQuenching>()) continue;
 
                 bool flag = colObj.Attributes?.IsTrue("forgable") ?? false;
-
+               
                 if (colObj.Tool.HasValue || colObj is ItemIngot or ItemMetalPlate or ItemWorkItem or BlockSmeltedContainer || flag)
                 {
                     colObj.CollectibleBehaviors = colObj.CollectibleBehaviors.Append(new ItemBehaviorQuenching(colObj));

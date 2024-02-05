@@ -114,40 +114,6 @@ namespace BlackSmithEnhancements
         }
     }
 
-
-    // to remove unwanted types
-    //[HarmonyPatch(typeof(GuiHandbookItemStackPage), "RenderListEntryTo", MethodType.Normal)]
-    //public class Class_GuiHandbook_Patch
-    //{
-
-    //    static void Prefix(GuiHandbookItemStackPage __instance, ICoreClientAPI capi, float dt, double x, double y, double cellWidth, double cellHeight)
-    //    {
-
-    //        ItemStack itemStack = null;
-
-    //        if (__instance != null) 
-    //        {
-    //            itemStack = __instance.Stack;
-
-    //            if (itemStack.Collectible.Variant == null) return;
-
-    //            ICollection<string> types = itemStack.Collectible.Variant.Keys;
-
-    //            ICollection<string> typesof = itemStack.Collectible.Variant.Values;
-
-    //            if (types == null) return;
-
-
-    //            if (typesof.Contains("oak") || typesof.Contains("granite"))
-    //            {
-    //                __instance.dummySlot = new DummySlot(itemStack);
-    //                __instance.Recompose(capi);
-    //            }
-    //            else { __instance.Visible = false; }
-    //        }
-    //    }
-    //}
-
     [HarmonyPatch(typeof(Block), "OnEntityInside")]
     public class OnEntityInside_Patch
     {

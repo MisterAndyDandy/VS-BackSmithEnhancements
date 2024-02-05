@@ -107,8 +107,8 @@ namespace BlackSmithEnhancements
 
                 if (world.Player.CameraMode == EnumCameraMode.FirstPerson)
                 {
-                    ViewoffSet = -0.15f;
-                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.8f, 0).Ahead(0.6f, byEntity.Pos.Pitch - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
+                    ViewoffSet =- 0.20f;
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.6f, 0).Ahead(0.8f, byEntity.Pos.Pitch - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
                 }
             }
 
@@ -116,7 +116,12 @@ namespace BlackSmithEnhancements
             return new Vec3d(0f,0f,0f);
            
         }
-     
+
+        public override string GetHeldReadyAnimation(ItemSlot activeHotbarSlot, Entity forEntity, EnumHand hand)
+        {
+            return null;
+        }
+
         public override string GetHeldTpUseAnimation(ItemSlot activeHotbarSlot, Entity byEntity)
         {
             return null;
