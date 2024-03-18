@@ -1,0 +1,12 @@
+{
+  "type": "code",
+  "modid": "blacksmithenhancements",
+  "name": "Blacksmith Enhancements",
+  "description": "",
+  "authors": [ "Mister Andy Dandy" ],
+  "Contributors": [ "" ],
+  "version": "1.0.5",
+  "dependencies": {
+    "game": "1.19.0"
+  }
+}

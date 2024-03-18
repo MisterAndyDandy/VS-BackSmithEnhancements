@@ -41,6 +41,9 @@
     <Content Include="assets\**">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Remove="src\Block\**" />
+    <EmbeddedResource Remove="src\Block\**" />
+    <None Remove="src\Block\**" />
     <None Remove="assets\game\lang\en.json" />
     <None Remove="assets\blacksmithenhancements\recipes\grid\blacksmith-gloves.json" />
 	    <Content Include="modicon.png">
@@ -57,7 +60,6 @@
 
   <ItemGroup>
     <Folder Include="assets\blacksmithenhancements\patches\" />
-    <Folder Include="src\Block\" />
   </ItemGroup>
 
 </Project>

@@ -117,20 +117,91 @@ namespace BlackSmithEnhancements
            
         }
 
-        public override string GetHeldReadyAnimation(ItemSlot activeHotbarSlot, Entity forEntity, EnumHand hand)
+        public override void OnBeforeRender(ICoreClientAPI capi, ItemStack itemstack, EnumItemRenderTarget target, ref ItemRenderInfo renderinfo)
         {
-            return null;
+            ItemSlot itemSlot = capi.World.Player.InventoryManager.MouseItemSlot;
+
+            if (itemSlot == renderinfo.InSlot)
+            {
+                if (itemstack.Attributes.HasAttribute("renderVariant"))
+                {
+                    if (capi?.World is IClientWorldAccessor)
+                    {
+                        itemSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
+                    }
+
+                    itemSlot.Itemstack.Attributes.SetInt("renderVariant", 0);
+                    itemSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
+                    capi.World.Player.InventoryManager.BroadcastHotbarSlot();
+                    
+                }
+            }
+
+            itemSlot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
+
+            if (renderinfo.InSlot != itemSlot) 
+            {
+                if (renderinfo.InSlot.Itemstack == null) return;
+
+                if (renderinfo.InSlot.Itemstack.Attributes.HasAttribute("renderVariant"))
+                {
+                    if (capi?.World is IClientWorldAccessor)
+                    {
+                        renderinfo.InSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
+                    }
+
+                    renderinfo.InSlot.Itemstack.Attributes.SetInt("renderVariant", 0);
+                    renderinfo.InSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
+
+                }
+            }
         }
 
-        public override string GetHeldTpUseAnimation(ItemSlot activeHotbarSlot, Entity byEntity)
+        public override void OnModifiedInInventorySlot(IWorldAccessor world, ItemSlot slot, ItemStack extractedStack = null)
         {
-            return null;
+            if(extractedStack != null && world.Api is ICoreClientAPI capi) 
+            {
+                if (capi?.World is IClientWorldAccessor)
+                {
+                    extractedStack.TempAttributes.RemoveAttribute("renderVariant");
+                }
+
+                extractedStack.Attributes.SetInt("renderVariant", 0);
+                extractedStack.Attributes.RemoveAttribute("renderVariant");
+                capi.World.Player?.InventoryManager.BroadcastHotbarSlot();
+
+                capi.World.Player.Entity.TpAnimManager.StopAnimation("usebellow");
+            }
+            base.OnModifiedInInventorySlot(world, slot, extractedStack);
         }
-        
+
+        public override string GetHeldTpUseAnimation(ItemSlot activeHotbarSlot, Entity forEntity)
+        {
+            return "";
+        }
+
+        public override string GetHeldTpIdleAnimation(ItemSlot activeHotbarSlot, Entity forEntity, EnumHand hand)
+        {
+       
+            if (forEntity.AnimManager.IsAnimationActive("usebellow") && (forEntity as EntityPlayer).Controls.RightMouseDown == false)
+            {
+                if (forEntity.World is IClientWorldAccessor)
+                {
+                    activeHotbarSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
+                }
+
+                activeHotbarSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
+                (forEntity as EntityPlayer)?.Player?.InventoryManager.BroadcastHotbarSlot();
+
+            }
+
+            return activeHotbarSlot.Itemstack.Collectible.HeldRightTpIdleAnimation;
+        }
+
         public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
         {
             base.OnHeldInteractStart(slot, byEntity, blockSel, entitySel, firstEvent, ref handling);
-  
+
             if (handling != EnumHandHandling.PreventDefault)
             {
                 if (slot.Empty) {
