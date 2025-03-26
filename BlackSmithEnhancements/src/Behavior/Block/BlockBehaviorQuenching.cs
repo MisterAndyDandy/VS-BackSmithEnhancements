@@ -8,7 +8,7 @@ namespace BlackSmithEnhancements.Behavior.Block
 {
     public class BlockBehaviorQuenching : BlockBehavior
     {
-        private long secondPasted = 360;
+        private long _secondPasted = 360;
 
         public BlockBehaviorQuenching(Vintagestory.API.Common.Block block) : base(block)
         {
@@ -31,7 +31,7 @@ namespace BlackSmithEnhancements.Behavior.Block
                 EnumParticleModel.Quad
             )
             {
-                AddPos = new Vec3d() { }.Set(0f, 0.2f, 0f),
+                AddPos = new Vec3d { X = 0, Y = 0, Z = 0 }.Set(0f, 0.2f, 0f),
                 OpacityEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -250f),
                 SizeEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -0.03f),
                 AddVelocity = new Vec3f(0.5f, 2f, 0.5f),
@@ -104,36 +104,34 @@ namespace BlackSmithEnhancements.Behavior.Block
         {
             base.OnBlockInteractStart(world, byPlayer, blockSel, ref handling);
 
-            if (blockSel != null && !byPlayer.Entity.RightHandItemSlot.Empty)
-            {
-                if (block.GetBlockEntity<BlockEntityLiquidContainer>(blockSel) is BlockEntityLiquidContainer entityLiquidContainer)
-                {
-                    ItemStack heldStack = byPlayer.Entity.RightHandItemSlot.Itemstack;
-                    float temp = heldStack.Collectible.GetTemperature(world, heldStack);
+            if (blockSel == null || byPlayer.Entity.RightHandItemSlot.Empty)
+                return false;
 
-                    if (heldStack.Collectible.HasTemperature(heldStack) && temp > 20.1f)
-                    {
-                        if (heldStack.Collectible.HasBehavior<ItemBehaviorQuenching>())
-                        {
-                                Quenching(world, heldStack, byPlayer, blockSel, (BlockLiquidContainerBase)entityLiquidContainer.Block, entityLiquidContainer, (float)heldStack.Collectible.GetTemperature(world, heldStack));
-                                heldStack.Collectible.HeldTpUseAnimation = "interactstatic";
-                                secondPasted = world.Calendar.ElapsedSeconds;
-                                handling = EnumHandling.Handled;
-                                return true;
-                            
-                        }
-                    };
-                }
-            }
+            if (block.GetBlockEntity<BlockEntityLiquidContainer>(blockSel) is not { } entityLiquidContainer)
+                return false;
 
-            return false;
+            var heldStack = byPlayer.Entity.RightHandItemSlot.Itemstack;
+            var temp = heldStack.Collectible.GetTemperature(world, heldStack);
+
+            if (!heldStack.Collectible.HasTemperature(heldStack) || !(temp > 20.1f))
+                return false;
+
+            if (!heldStack.Collectible.HasBehavior<ItemBehaviorQuenching>())
+                return false;
+
+            Quenching(world, heldStack, byPlayer, blockSel, (BlockLiquidContainerBase)entityLiquidContainer.Block, entityLiquidContainer, heldStack.Collectible.GetTemperature(world, heldStack));
+            heldStack.Collectible.HeldTpUseAnimation = "interactstatic";
+            _secondPasted = world.Calendar.ElapsedSeconds;
+            handling = EnumHandling.Handled;
+            return true;
+
         }
     
         public void Quenching(IWorldAccessor world, ItemStack heldStack, IPlayer byPlayer, BlockSelection blockSel, BlockLiquidContainerBase containerBase, BlockEntityLiquidContainer entityLiquidContainer, float temp)
         {
-            long elapsedSeconds = world.Calendar.ElapsedSeconds - secondPasted;
+            var elapsedSeconds = world.Calendar.ElapsedSeconds - _secondPasted;
 
-            ItemStack contentStacks = IsContentWater(entityLiquidContainer.GetNonEmptyContentStacks());
+            var contentStacks = IsContentWater(entityLiquidContainer.GetNonEmptyContentStacks());
 
             if (contentStacks == null) return;
 
@@ -148,32 +146,22 @@ namespace BlackSmithEnhancements.Behavior.Block
                 }
             }
             //containerBase.TryTakeContent(blockSel.Position, (int)Math.Ceiling(0.05f * BlockLiquidContainerBase.GetContainableProps(contentStacks).ItemsPerLitre)); will do something later
-            heldStack.Collectible.SetTemperature(world, heldStack, GameMath.Max(0, temp - Math.Max(0f, GameMath.Max(0f, world.Rand.Next(10, 100)))), true);
+            heldStack.Collectible.SetTemperature(world, heldStack, GameMath.Max(0, temp - Math.Max(0f, GameMath.Max(0f, world.Rand.Next(10, 100)))));
 
         }
 
         private static ItemStack IsContentWater(ItemStack[] contentStacks) {
-            if (contentStacks.Length != 0)
-            {
-                string isWater;
-
-                ItemStack itemStack = contentStacks[0] ?? contentStacks[1];
-
-                if (itemStack == null) return null;
-
-                if (itemStack.Collectible.IsLiquid()) {
-
-                    isWater = itemStack.Collectible.FirstCodePart();
-
-                    if (isWater != "waterportion") return null;
-
-                    return itemStack;
-                }
-
-                if (itemStack != null && !itemStack.Collectible.IsLiquid()) return null;
-
-            };
-
+            if (contentStacks.Length == 0)
+                return null;
+            bool isWater;
+            var itemStack = contentStacks[0] ?? contentStacks[1];
+            if (itemStack == null) return null;
+            if (itemStack.Collectible.IsLiquid()) {
+                // Check for waterportion instead for compatibility with BalancedThirst and Hydrate or Diedrate or similar mods
+                isWater = itemStack.Collectible.FirstCodePart().Contains("waterportion");
+                return isWater ? null : itemStack;
+            }
+            if (!itemStack.Collectible.IsLiquid()) return null;
             return null;
         }
 

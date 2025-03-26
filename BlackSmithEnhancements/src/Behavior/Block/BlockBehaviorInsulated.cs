@@ -8,24 +8,24 @@ namespace BlackSmithEnhancements.Behavior.Block
 {
     public class BlockEntityBehaviorInsulated : BlockEntityBehavior
     {
-        BlockEntityGenericTypedContainer blockEntityGenericTypedContainer;
+        private BlockEntityGenericTypedContainer _blockEntityGenericTypedContainer;
 
-        public double nowHours;
+        public double NowHours;
 
-        public double hourDiff;
+        public double HourDiff;
 
-        public double lastUpdateHours;
+        public double LastUpdateHours;
 
-        private float lastUpdateTemp;
+        private float _lastUpdateTemp;
 
         public BlockEntityBehaviorInsulated(BlockEntity blockentity) : base(blockentity)
         {
 
-            nowHours = 0;
+            NowHours = 0;
 
-            lastUpdateHours = 0;
+            LastUpdateHours = 0;
 
-            hourDiff = 0;
+            HourDiff = 0;
         }
     
         public static SimpleParticleProperties InitializeSmokeEffect()
@@ -45,7 +45,7 @@ namespace BlackSmithEnhancements.Behavior.Block
                 EnumParticleModel.Quad
             )
             {
-                AddPos = new Vec3d() { }.Set(0f, 0.2f, 0f),
+                AddPos = new Vec3d { X = 0, Y = 0, Z = 0 }.Set(0f, 0.2f, 0f),
                 OpacityEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -250f),
                 SizeEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -0.03f),
                 AddVelocity = new Vec3f(0.5f, 2f, 0.5f),
@@ -59,73 +59,66 @@ namespace BlackSmithEnhancements.Behavior.Block
             return smoke;
         }
 
-        public override void Initialize(ICoreAPI api, JsonObject properties)
+        public override void Initialize(ICoreAPI api, JsonObject jsonProperties)
         {
-            base.Initialize(api, properties);
-
-            if (Pos != null)
-            {
-                blockEntityGenericTypedContainer = (BlockEntityGenericTypedContainer)Api.World.BlockAccessor.GetBlockEntity(Pos);
-
-                if (blockEntityGenericTypedContainer != null)
-                {
-                    if (blockEntityGenericTypedContainer.Block.Attributes["Insulated"][blockEntityGenericTypedContainer.type].AsBool(false) == true)
-                    {
-                        api.World.RegisterGameTickListener(OnGameTick, 100);
-
-                        api.World.RegisterGameTickListener(OnSlowTick, 1000);
-                    }
-                }
-            }
+            base.Initialize(api, jsonProperties);
+            if (Pos == null) return;
+            _blockEntityGenericTypedContainer = (BlockEntityGenericTypedContainer)Api.World.BlockAccessor.GetBlockEntity(Pos);
+            if (_blockEntityGenericTypedContainer == null) return;
+            if (!_blockEntityGenericTypedContainer.Block.Attributes["Insulated"][
+                    _blockEntityGenericTypedContainer.type].AsBool())
+                return;
+            api.World.RegisterGameTickListener(OnGameTick, 100);
+            api.World.RegisterGameTickListener(OnSlowTick, 1000);
         }
 
         private void OnGameTick(float dt) 
         {
-            ItemStack itemStack = GetHeatStack(blockEntityGenericTypedContainer.Inventory);
+            var itemStack = GetHeatStack(_blockEntityGenericTypedContainer.Inventory);
 
             if (itemStack == null) return;
 
-            float temp = itemStack.Collectible.GetTemperature(Api.World, itemStack);
+            var temp = itemStack.Collectible.GetTemperature(Api.World, itemStack);
 
             if (20.3f > temp) return;
 
             if (itemStack.Attributes["temperature"] is not ITreeAttribute attr) return;
 
-            nowHours = Api.World.Calendar.TotalHours;
+            NowHours = Api.World.Calendar.TotalHours;
 
-            if (nowHours < 0) { nowHours = 0; }
+            if (NowHours < 0) { NowHours = 0; }
 
-            lastUpdateHours = attr.GetDouble("temperatureLastUpdate");
+            LastUpdateHours = attr.GetDouble("temperatureLastUpdate");
 
-            hourDiff = nowHours - lastUpdateHours;
+            HourDiff = NowHours - LastUpdateHours;
 
-            double tempDiff = (temp / lastUpdateHours / temp) + (-hourDiff * 2 * 8f);
+            var tempDiff = temp / LastUpdateHours / temp + -HourDiff * 2 * 8f;
 
             itemStack.Collectible.SetTemperature(Api.World, itemStack, (float)GameMath.Clamp(tempDiff + GameMath.Min(temp, 1100f), 0f, 1100f), false);
 
-            lastUpdateTemp = temp;
+            _lastUpdateTemp = temp;
 
-            blockEntityGenericTypedContainer.MarkDirty();
+            _blockEntityGenericTypedContainer.MarkDirty();
 
         }
 
         private void OnSlowTick(float dt)
         {
-            if (blockEntityGenericTypedContainer.Block != null)
+            if (_blockEntityGenericTypedContainer.Block != null)
             {
-                var Smoke = InitializeSmokeEffect();
-                Smoke.AddPos = Pos.ToVec3d().AddCopy(0, 0.5f, 0);
-                Smoke.MinPos = Pos.ToVec3d();  
-                Api.World.SpawnParticles(Smoke);
+                var smoke = InitializeSmokeEffect();
+                smoke.AddPos = Pos.ToVec3d().AddCopy(0, 0.5f, 0);
+                smoke.MinPos = Pos.ToVec3d();  
+                Api.World.SpawnParticles(smoke);
             }
 
         }
 
         private ItemStack GetHeatStack(InventoryBase inv) 
         {
-            for (int i = 0; i < inv.Count; i++) {
+            for (var i = 0; i < inv.Count; i++) {
 
-                ItemSlot itemSlot = inv[i];
+                var itemSlot = inv[i];
 
                 if (itemSlot.Empty)
                 {
@@ -140,7 +133,7 @@ namespace BlackSmithEnhancements.Behavior.Block
 
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder dsc)
         {
-            dsc.AppendFormat("Contents - temperature: " + (int)lastUpdateTemp, 20.3f > lastUpdateTemp);
+            dsc.AppendFormat("Contents - temperature: " + (int)_lastUpdateTemp, 20.3f > _lastUpdateTemp);
             dsc.AppendLine();
             base.GetBlockInfo(forPlayer, dsc);
 

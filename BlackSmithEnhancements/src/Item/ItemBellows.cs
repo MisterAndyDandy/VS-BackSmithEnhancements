@@ -10,47 +10,44 @@ using Vintagestory.GameContent;
 
 namespace BlackSmithEnhancements.Item
 {
-
-    class ItemBellow : Vintagestory.API.Common.Item
+    internal class ItemBellow : Vintagestory.API.Common.Item
     {
 
-        public float cooktimeBonus = 1;
+        public float CooktimeBonus = 1;
 
-        private WorldInteraction[] interactions;
+        private WorldInteraction[] _interactions;
 
-        private ItemSlot inputSlot;
+        private ItemSlot _inputSlot;
 
-        public override void OnLoaded(ICoreAPI api)
+        public override void OnLoaded(ICoreAPI coreApi)
         {
      
-            if (api.Side != EnumAppSide.Client)
+            if (coreApi.Side != EnumAppSide.Client)
             {
                 return;
             }
 
-            _ = api;
+            _ = coreApi;
 
-            interactions = ObjectCacheUtil.GetOrCreate(api, "bellowInteractions", delegate
+            _interactions = ObjectCacheUtil.GetOrCreate(coreApi, "bellowInteractions", delegate
             {
-                List<ItemStack> list = new List<ItemStack>();
-                foreach (CollectibleObject items in api.World.Collectibles)
+                var list = new List<ItemStack>();
+                foreach (var items in coreApi.World.Collectibles)
                 {
-                    if (api.World.GetBlock(items.Id) is BlockForge)
+                    if (coreApi.World.GetBlock(items.Id) is BlockForge)
                     {
                         list.Add(new ItemStack(items));
                     }
                 }
 
-                return new WorldInteraction[1]
+                return new WorldInteraction[]
                 {
-                        new WorldInteraction
+                        new()
                         {
                             ActionLangCode = "heldhelp-bellow",
                             MouseButton = EnumMouseButton.Right,
                             Itemstacks = list.ToArray(),
-                            GetMatchingStacks = delegate(WorldInteraction wi, BlockSelection bs, EntitySelection es) {
-                                return wi.Itemstacks;
-                            }
+                            GetMatchingStacks = (wi, _, _) => wi.Itemstacks
                         }
                 };
             });
@@ -74,7 +71,7 @@ namespace BlackSmithEnhancements.Item
                 EnumParticleModel.Quad
             )
             {
-                AddPos = new Vec3d() { }.Set(0.1, 0.1, 0.1),
+                AddPos = new Vec3d { X = 0, Y = 0, Z = 0 }.Set(0.1, 0.1, 0.1),
                 OpacityEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -250f),
                 SizeEvolve = new EvolvingNatFloat(EnumTransformFunction.LINEAR, -0.03f),
                 VertexFlags = 100,
@@ -89,8 +86,8 @@ namespace BlackSmithEnhancements.Item
 
         private static Vec3d GetVec3d(Entity byEntity)
         {
-            float charView = 0.13f;
-            float ViewoffSet = 0f;
+            var charView = 0.13f;
+            var viewoffSet = 0f;
 
             if (byEntity.Api.World is IClientWorldAccessor world)
             {
@@ -98,14 +95,14 @@ namespace BlackSmithEnhancements.Item
                 if (world.Player.CameraMode != EnumCameraMode.FirstPerson)
                 {
                     charView = 0f;
-                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 1.2f, 0).Ahead(1.5f, 3.2f - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 1.2f, 0).Ahead(1.5f, 3.2f - viewoffSet, byEntity.Pos.Yaw - viewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
 
                 }
 
                 if (world.Player.CameraMode == EnumCameraMode.FirstPerson)
                 {
-                    ViewoffSet =- 0.20f;
-                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.6f, 0).Ahead(0.8f, byEntity.Pos.Pitch - ViewoffSet, byEntity.Pos.Yaw - ViewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
+                    viewoffSet =- 0.20f;
+                    return byEntity.Pos.XYZ.Add(0, byEntity.LocalEyePos.Y - 0.6f, 0).Ahead(0.8f, byEntity.Pos.Pitch - viewoffSet, byEntity.Pos.Yaw - viewoffSet).Ahead(charView, 0f, byEntity.Pos.Yaw + GameMath.PIHALF);
                 }
             }
 
@@ -116,16 +113,13 @@ namespace BlackSmithEnhancements.Item
 
         public override void OnBeforeRender(ICoreClientAPI capi, ItemStack itemstack, EnumItemRenderTarget target, ref ItemRenderInfo renderinfo)
         {
-            ItemSlot itemSlot = capi.World.Player.InventoryManager.MouseItemSlot;
+            var itemSlot = capi.World.Player.InventoryManager.MouseItemSlot;
 
             if (itemSlot == renderinfo.InSlot)
             {
                 if (itemstack.Attributes.HasAttribute("renderVariant"))
                 {
-                    if (capi?.World is IClientWorldAccessor)
-                    {
-                        itemSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
-                    }
+                    itemSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
 
                     itemSlot.Itemstack.Attributes.SetInt("renderVariant", 0);
                     itemSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
@@ -142,10 +136,7 @@ namespace BlackSmithEnhancements.Item
 
                 if (renderinfo.InSlot.Itemstack.Attributes.HasAttribute("renderVariant"))
                 {
-                    if (capi?.World is IClientWorldAccessor)
-                    {
-                        renderinfo.InSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
-                    }
+                    renderinfo.InSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
 
                     renderinfo.InSlot.Itemstack.Attributes.SetInt("renderVariant", 0);
                     renderinfo.InSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
@@ -158,16 +149,16 @@ namespace BlackSmithEnhancements.Item
         {
             if(extractedStack != null && world.Api is ICoreClientAPI capi) 
             {
-                if (capi?.World is IClientWorldAccessor)
+                if (capi.World is not null)
                 {
                     extractedStack.TempAttributes.RemoveAttribute("renderVariant");
                 }
 
                 extractedStack.Attributes.SetInt("renderVariant", 0);
                 extractedStack.Attributes.RemoveAttribute("renderVariant");
-                capi.World.Player?.InventoryManager.BroadcastHotbarSlot();
+                capi.World?.Player?.InventoryManager.BroadcastHotbarSlot();
 
-                capi.World.Player.Entity.TpAnimManager.StopAnimation("usebellow");
+                capi.World?.Player?.Entity.TpAnimManager.StopAnimation("usebellow");
             }
             base.OnModifiedInInventorySlot(world, slot, extractedStack);
         }
@@ -179,18 +170,19 @@ namespace BlackSmithEnhancements.Item
 
         public override string GetHeldTpIdleAnimation(ItemSlot activeHotbarSlot, Entity forEntity, EnumHand hand)
         {
-       
-            if (forEntity.AnimManager.IsAnimationActive("usebellow") && (forEntity as EntityPlayer).Controls.RightMouseDown == false)
+            if (!forEntity.AnimManager.IsAnimationActive("usebellow") ||
+                ((EntityPlayer)forEntity).Controls.RightMouseDown)
             {
-                if (forEntity.World is IClientWorldAccessor)
-                {
-                    activeHotbarSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
-                }
-
-                activeHotbarSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
-                (forEntity as EntityPlayer)?.Player?.InventoryManager.BroadcastHotbarSlot();
-
+                return activeHotbarSlot.Itemstack.Collectible.HeldRightTpIdleAnimation;
             }
+
+            if (forEntity.World is IClientWorldAccessor)
+            {
+                activeHotbarSlot.Itemstack.TempAttributes.RemoveAttribute("renderVariant");
+            }
+
+            activeHotbarSlot.Itemstack.Attributes.RemoveAttribute("renderVariant");
+            ((EntityPlayer)forEntity).Player?.InventoryManager.BroadcastHotbarSlot();
 
             return activeHotbarSlot.Itemstack.Collectible.HeldRightTpIdleAnimation;
         }
@@ -207,7 +199,7 @@ namespace BlackSmithEnhancements.Item
 
                 if (!byEntity.LeftHandItemSlot.Empty)
                 {
-                    string text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
+                    var text = byEntity.LeftHandItemSlot.Itemstack.GetName().ToLower();
                     (api as ICoreClientAPI)?.TriggerIngameError(!byEntity.LeftHandItemSlot.Empty, "Requires both hands", Lang.Get("ingameerror-bellow-requires-bothhands-{0}", text.UcFirst()));
                     return;
                 }
@@ -227,8 +219,8 @@ namespace BlackSmithEnhancements.Item
         
         public override bool OnHeldInteractStep(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel)
         {
-            int num = GameMath.Clamp((int)Math.Ceiling(secondsUsed * 5f), 0, 2);
-            int @int = slot.Itemstack.Attributes.GetInt("renderVariant");
+            var num = GameMath.Clamp((int)Math.Ceiling(secondsUsed * 5f), 0, 2);
+            var @int = slot.Itemstack.Attributes.GetInt("renderVariant");
             slot.Itemstack.TempAttributes.SetInt("renderVariant", num);
             slot.Itemstack.Attributes.SetInt("renderVariant", num);
 
@@ -267,7 +259,7 @@ namespace BlackSmithEnhancements.Item
 
         public override void OnHeldInteractStop(float secondsUsed, ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel)
         {
-            ItemStack heldstack = slot.Itemstack;
+            var heldstack = slot.Itemstack;
 
             if (byEntity.Attributes.GetInt("bellowCancel") == 1)
             {
@@ -296,121 +288,118 @@ namespace BlackSmithEnhancements.Item
 
             if (byEntity.World.Rand.Next(1, 80) < 5)
             {
-                DamageItem(api.World, byEntity, (byEntity as EntityPlayer)?.Player.InventoryManager.ActiveHotbarSlot, 1);
+                DamageItem(api.World, byEntity, (byEntity as EntityPlayer)?.Player.InventoryManager.ActiveHotbarSlot);
                 //(api as ICoreClientAPI)?.TriggerChatMessage("Bellow been damage");
             }
 
             if (api.Side == EnumAppSide.Client)
             {
                 PlaySound(byEntity.World.Api, byEntity, dualCallByPlayer, Attributes["sound"].AsString());
-                Vec3d pos = GetVec3d(byEntity);
-                SimpleParticleProperties smokeHeld = InitializeSmokeEffect();
+                var pos = GetVec3d(byEntity);
+                var smokeHeld = InitializeSmokeEffect();
                 smokeHeld.MinPos = pos.AddCopy(0, 0.3, 0);
                 byEntity.World.SpawnParticles(smokeHeld);
             }
 
             byEntity.AnimManager.StartAnimation("finishbellow");
-
+            // Add callback to stop animation in a second
+            
             if (blockSel == null) return;
 
-            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityForge blockEntityForge)
-            {
-                Forge(blockEntityForge);
-            }
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position)
+                is BlockEntityForge blockEntityForge)
+                BlowOnForge(blockEntityForge);
 
-            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position) is BlockEntityFirepit blockEntityFirepit)
-            {
-                FirePit(blockEntityFirepit);
-            }
+            if (api.World.BlockAccessor.GetBlockEntity(blockSel.Position)
+                is BlockEntityFirepit blockEntityFirepit)
+                BlowOnFirepit(blockEntityFirepit);
         }
 
-        private void Forge(BlockEntityForge blockEntityForge) 
+        private void BlowOnForge(BlockEntityForge blockEntityForge) 
         {
-            ItemStack forgeContents = blockEntityForge.Contents;
+            var forgeContents = blockEntityForge.Contents;
 
             if (!blockEntityForge.IsBurning)
             {
                 (api as ICoreClientAPI)?.TriggerIngameError(blockEntityForge.IsBurning == false, "Lit the forge first", Lang.Get("ingameerror-forge-lit"));
                 return;
-            };
+            }
 
             if (forgeContents == null)
             {
-                (api as ICoreClientAPI)?.TriggerIngameError(forgeContents == null, "Forge missing contents", Lang.Get("ingameerror-forge-empty"));
+                (api as ICoreClientAPI)?.TriggerIngameError(true, "Forge missing contents", Lang.Get("ingameerror-forge-empty"));
                 return;
             }
 
-            float temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
+            var temp = forgeContents.Collectible.GetTemperature(api.World, forgeContents);
 
-            float tempdecr = -forgeContents.StackSize * 2;
+            var tempDecrease = -forgeContents.StackSize * 2;
 
-            float tempBoost = api.World.Rand.Next(15, 30) - tempdecr;
+            var tempBoost = api.World.Rand.Next(15, 30) - tempDecrease;
 
-            if (temp > 1100f)
-            {
-                return;
-            }
+            if (temp > 1100f) return;
 
-            if (api.Side == EnumAppSide.Server)
-            {
-                forgeContents.Collectible.SetTemperature(api.World, forgeContents, GameMath.Clamp(tempBoost + GameMath.Min(temp, 1100f), 0f, 1100f), true);
-                blockEntityForge.MarkDirty(true);
-            }
+            if (api.Side != EnumAppSide.Server) return;
 
+            forgeContents.Collectible.SetTemperature(api.World, forgeContents, GameMath.Clamp(tempBoost + GameMath.Min(temp, 1100f), 0f, 1100f));
+            blockEntityForge.MarkDirty(true);
         }
 
-        private void FirePit(BlockEntityFirepit blockEntityFirepit) {
+        private void BlowOnFirepit(BlockEntityFirepit blockEntityFirepit) {
 
-            IWorldAccessor world = api.World;
+            var world = api.World;
 
             if (world == null) return;
 
-            inputSlot = blockEntityFirepit.inputSlot;
+            _inputSlot = blockEntityFirepit.inputSlot;
 
             if (!blockEntityFirepit.IsBurning)
             {
                 (api as ICoreClientAPI)?.TriggerIngameError(blockEntityFirepit.IsBurning == false, "Lit the firepit first", Lang.Get("ingameerror-firepit-lit"));
                 return;
-            };
+            }
 
-            if (inputSlot.Empty)
+            if (_inputSlot.Empty)
             {
-                (api as ICoreClientAPI)?.TriggerIngameError(inputSlot.Empty, "firepit empty", Lang.Get("ingameerror-firepit-empty"));
+                (api as ICoreClientAPI)?.TriggerIngameError(_inputSlot.Empty, "firepit empty", Lang.Get("ingameerror-firepit-empty"));
                 return;
             }
 
-            if (api.Side == EnumAppSide.Server)
+            if (api.Side != EnumAppSide.Server)
             {
-                float cookingTime = blockEntityFirepit.inputStackCookingTime;
+                return;
+            }
 
-                float stackTemp = blockEntityFirepit.InputStackTemp;
+            var cookingTime = blockEntityFirepit.inputStackCookingTime;
 
-                float fuelTemp = blockEntityFirepit.furnaceTemperature;
+            var stackTemp = blockEntityFirepit.InputStackTemp;
 
-                if (inputSlot.Itemstack.Collectible is BlockSmeltingContainer)
+            var fuelTemp = blockEntityFirepit.furnaceTemperature;
+
+            switch (_inputSlot.Itemstack.Collectible)
+            {
+                case BlockSmeltingContainer:
+                    CooktimeBonus = 3f;
+                    break;
+                case BlockCookingContainer:
+                    CooktimeBonus = 1.25f;
+                    break;
+                case BlockSmeltedContainer:
                 {
-                    cooktimeBonus = 3f;
-                }
-
-                if (inputSlot.Itemstack.Collectible is BlockCookingContainer)
-                {
-                    cooktimeBonus = 1.25f;
-                }
-
-                if (inputSlot.Itemstack.Collectible is BlockSmeltedContainer)
-                {
-                    float min = GameMath.Min(stackTemp, fuelTemp); // always stay within the min value between stackTemp, fuelTemp.. I think that what it does? :D
+                    var min = GameMath.Min(stackTemp, fuelTemp); // always stay within the min value between stackTemp, fuelTemp... I think that what it does? :D
                     float random = api.World.Rand.Next(100); // < pick a number within 100
-                    inputSlot.Itemstack.Collectible.SetTemperature(world, inputSlot.Itemstack, GameMath.Clamp(random + min, 0f, fuelTemp), false); // let set the temp to this.
+                    _inputSlot.Itemstack.Collectible.SetTemperature(world, _inputSlot.Itemstack, GameMath.Clamp(random + min, 0f, fuelTemp), false); // let set the temp to this.
+                    break;
                 }
+            }
 
-                if (cookingTime > 1)
-                {
+            if (cookingTime > 1)
+            {
                
-                    blockEntityFirepit.inputStackCookingTime = cookingTime + cooktimeBonus;
+                blockEntityFirepit.inputStackCookingTime = cookingTime + CooktimeBonus;
 
-                    // burned things
-                    /*if (inputSlot.Itemstack.Collectible is not BlockSmeltedContainer or BlockCookingContainer or BlockSmeltingContainer)
+                // burned things
+                /*if (inputSlot.Itemstack.Collectible is not BlockSmeltedContainer or BlockCookingContainer or BlockSmeltingContainer)
                     {
                         if (api.World.Rand.Next(14, 100) < 15)
                         {
@@ -418,18 +407,17 @@ namespace BlackSmithEnhancements.Item
                         }
                     }
                     */
-                }
             }
         }
 
-        private void PlaySound(ICoreAPI api, EntityAgent byEntity, IPlayer player, string name)
+        private void PlaySound(ICoreAPI coreApi, EntityAgent byEntity, IPlayer player, string name)
         {
-            api.World.PlaySoundAt(new AssetLocation(Code.Domain, name), byEntity, player, false, 2f, 1f);
+            coreApi.World.PlaySoundAt(new AssetLocation(Code.Domain, name), byEntity, player, false, 2f);
         }
 
         public override WorldInteraction[] GetHeldInteractionHelp(ItemSlot inSlot)
         {
-            return interactions.Append(base.GetHeldInteractionHelp(inSlot));
+            return _interactions.Append(base.GetHeldInteractionHelp(inSlot));
         }
     }
 }

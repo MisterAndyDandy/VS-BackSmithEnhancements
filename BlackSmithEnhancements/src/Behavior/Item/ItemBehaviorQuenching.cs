@@ -9,7 +9,7 @@ namespace BlackSmithEnhancements.Behavior.Item
     internal class ItemBehaviorQuenching : CollectibleBehavior
     {
   
-        private WorldInteraction[] interactions;
+        private WorldInteraction[] _interactions;
 
         public ItemBehaviorQuenching(CollectibleObject collObj) : base(collObj)
         {
@@ -23,33 +23,29 @@ namespace BlackSmithEnhancements.Behavior.Item
                 return;
             }
 
-            if (api is ICoreClientAPI capi)
+            if (api is ICoreClientAPI)
             {
-                interactions = ObjectCacheUtil.GetOrCreate(api, "QuenchingInteractions", delegate
+                _interactions = ObjectCacheUtil.GetOrCreate(api, "QuenchingInteractions", delegate
                 {
-                    List<ItemStack> list = new List<ItemStack>();
-                    foreach (CollectibleObject items in api.World.Collectibles)
+                    var list = new List<ItemStack>();
+                    foreach (var items in api.World.Collectibles)
                     {
-                        if (api.World.GetBlock(items.Id) is BlockLiquidContainerBase containerBase)
-                        {
-                            if (containerBase is BlockBarrel || containerBase is BlockBucket)
-                            {
-                                list.Add(new ItemStack(items));
-                            }
-                        }
+                        if (api.World.GetBlock(items.Id)
+                            is not BlockLiquidContainerBase containerBase)
+                            continue;
 
+                        if (containerBase is BlockBarrel or BlockBucket)
+                            list.Add(new ItemStack(items));
                     }
 
-                    return new WorldInteraction[1]
+                    return new WorldInteraction[]
                     {
-                        new WorldInteraction
+                        new()
                         {
                             ActionLangCode = "heldhelp-quenching",
                             MouseButton = EnumMouseButton.Right,
                             Itemstacks = list.ToArray(),
-                            GetMatchingStacks = delegate(WorldInteraction wi, BlockSelection bs, EntitySelection es) {
-                                return wi.Itemstacks;
-                            }
+                            GetMatchingStacks = (wi, _, _) => wi.Itemstacks
                         }
                     };
                 });
@@ -57,15 +53,12 @@ namespace BlackSmithEnhancements.Behavior.Item
         }
         public override WorldInteraction[] GetHeldInteractionHelp(ItemSlot inSlot, ref EnumHandling handling)
         {
-            if (inSlot.Inventory.Api.World is IWorldAccessor world)
-            {
-                if (inSlot.Itemstack.Collectible.GetTemperature(world, inSlot.Itemstack) > 20.1f)
-                {
-                    return interactions.Append(base.GetHeldInteractionHelp(inSlot, ref handling));
-                }
-            }
+            if (inSlot.Inventory.Api.World is not { } world)
+                return base.GetHeldInteractionHelp(inSlot, ref handling);
 
-            return base.GetHeldInteractionHelp(inSlot, ref handling);
+            return inSlot.Itemstack.Collectible.GetTemperature(world, inSlot.Itemstack) > 20.1f ?
+                _interactions.Append(base.GetHeldInteractionHelp(inSlot, ref handling)) :
+                base.GetHeldInteractionHelp(inSlot, ref handling);
         }
     }
 }
