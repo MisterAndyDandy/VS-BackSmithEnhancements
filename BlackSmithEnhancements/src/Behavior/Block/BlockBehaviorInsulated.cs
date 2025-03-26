@@ -1,11 +1,10 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
 
-namespace BlackSmithEnhancements
+namespace BlackSmithEnhancements.Behavior.Block
 {
     public class BlockEntityBehaviorInsulated : BlockEntityBehavior
     {

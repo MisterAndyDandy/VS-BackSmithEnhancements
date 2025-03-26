@@ -2,11 +2,11 @@
   "type": "code",
   "modid": "blacksmithenhancements",
   "name": "Blacksmith Enhancements",
-  "description": "",
+  "description": "Bring smithing to the next level",
   "authors": [ "Mister Andy Dandy" ],
   "Contributors": [ "" ],
-  "version": "1.0.5",
+  "version": "1.1.0",
   "dependencies": {
-    "game": "1.19.0"
+    "game": "1.20.0"
   }
 }

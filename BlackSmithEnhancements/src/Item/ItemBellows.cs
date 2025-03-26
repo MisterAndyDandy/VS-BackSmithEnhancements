@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Numerics;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -11,10 +8,10 @@ using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
-namespace BlackSmithEnhancements
+namespace BlackSmithEnhancements.Item
 {
 
-    class ItemBellow : Item
+    class ItemBellow : Vintagestory.API.Common.Item
     {
 
         public float cooktimeBonus = 1;

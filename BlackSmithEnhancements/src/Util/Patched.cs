@@ -1,13 +1,13 @@
-﻿using HarmonyLib;
+﻿using BlackSmithEnhancements.Behavior.Item;
+using BlackSmithEnhancements.Item;
+using HarmonyLib;
 using Vintagestory.API.Common;
-using Vintagestory.GameContent;
-using Vintagestory.API.Datastructures;
 using Vintagestory.API.Common.Entities;
+using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using Vintagestory.API.Client;
-using System.Collections.Generic;
+using Vintagestory.GameContent;
 
-namespace BlackSmithEnhancements
+namespace BlackSmithEnhancements.Util
 {
     [HarmonyPatch(typeof(InventoryBase), "DropSlotIfHot")]
     public class Player_DropSlotIfHot_Patch
@@ -19,43 +19,34 @@ namespace BlackSmithEnhancements
 
         public static bool Gear_Has_Heat_Resistant(ItemSlot slot, IPlayer player)
         {
-            if (slot.Empty)
-            {
-                return false;
-            }
-            if (player != null && player.WorldData.CurrentGameMode == EnumGameMode.Creative)
-            {
-                return false;
-            }
-            if (player.Entity == null || player.Entity.GearInventory == null)
-            {
+            if (slot.Empty || player == null || player.WorldData.CurrentGameMode == EnumGameMode.Creative) return false;
+            if (player.Entity?
+                    .GetBehavior<EntityBehaviorSeraphInventory>() is not{ Inventory: not null } seraphInventory) 
                 return true;
-            }
-            foreach (ItemSlot itemSlot in player.Entity.GearInventory)
+            foreach (var itemSlot in seraphInventory.Inventory)
             {
-                if (itemSlot.BackgroundIcon == "gloves")
+                if (itemSlot.BackgroundIcon != "gloves")
                 {
-                    if (!itemSlot.Empty)
-                    {
-                        ItemStack itemstack = itemSlot.Itemstack;
-                        bool? flag;
-                        if (itemstack == null)
-                        {
-                            flag = null;
-                        }
-                        else
-                        {
-                            JsonObject attributes = itemstack.Collectible.Attributes;
-                            flag = ((attributes != null) ? new bool?(attributes.IsTrue("heatResistant")) : null);
-                        }
-                        bool? flag2 = flag;
-                        if (flag2.Value)
-                        {
-                            return false;
-                        }
-                    }
+                    continue;
+                }
+
+                if (itemSlot.Empty)
+                {
                     return true;
                 }
+
+                var itemstack = itemSlot.Itemstack;
+                bool? isHeatResistant;
+                if (itemstack == null)
+                {
+                    isHeatResistant = null;
+                }
+                else
+                {
+                    JsonObject attributes = itemstack.Collectible.Attributes;
+                    isHeatResistant = attributes?.IsTrue("heatResistant");
+                }
+                return isHeatResistant != null && !isHeatResistant.Value;
             }
             return true;
         }
@@ -72,7 +63,7 @@ namespace BlackSmithEnhancements
             {
                 if (byPlayer.Entity.Controls.ShiftKey == false && !byPlayer.InventoryManager.ActiveHotbarSlot.Empty)
                 {
-                    Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack?.Item;
+                    Vintagestory.API.Common.Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack?.Item;
 
                     if (heldItem != null)
                     {
@@ -98,7 +89,7 @@ namespace BlackSmithEnhancements
             if (blockSel != null && world != null) {
                 if (!byPlayer.InventoryManager.ActiveHotbarSlot.Empty)
                 {
-                    Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
+                    Vintagestory.API.Common.Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
 
                     if (heldItem != null)
                     {
@@ -127,24 +118,25 @@ namespace BlackSmithEnhancements
 
             if (pos == null) return false;
 
-            if (world.Rand.NextDouble() < 0.05 && (world.BlockAccessor.GetBlockEntity(pos) is BlockEntityForge blockEntityForge))
+            if (!(world.Rand.NextDouble() < 0.05) ||
+                (world.BlockAccessor.GetBlockEntity(pos) is not BlockEntityForge blockEntityForge))
             {
-
-                if(entityPlayer?.Player.WorldData.CurrentGameMode != EnumGameMode.Survival) return false;
-
-                if (blockEntityForge.IsBurning && entityPlayer.Pos.AsBlockPos.UpCopy(1) == blockEntityForge.Pos.UpCopy(1))
-                {
-                    entity.ReceiveDamage(new DamageSource
-                    {
-                        Source = EnumDamageSource.Block,
-                        SourceBlock = blockEntityForge.Block,
-                        Type = EnumDamageType.Fire,
-                        SourcePos = pos.ToVec3d()
-                    }, 0.5f);
-                }
-         
+                return true;
             }
-           
+
+            if(entityPlayer.Player.WorldData.CurrentGameMode != EnumGameMode.Survival) return false;
+
+            if (blockEntityForge.IsBurning && entityPlayer.Pos.AsBlockPos.UpCopy(1) == blockEntityForge.Pos.UpCopy(1))
+            {
+                entity.ReceiveDamage(new DamageSource
+                {
+                    Source = EnumDamageSource.Block,
+                    SourceBlock = blockEntityForge.Block,
+                    Type = EnumDamageType.Fire,
+                    SourcePos = pos.ToVec3d()
+                }, 0.5f);
+            }
+
             return true;
         }
     }
@@ -160,7 +152,7 @@ namespace BlackSmithEnhancements
             {
                 if (!byPlayer.InventoryManager.ActiveHotbarSlot.Empty)
                 {
-                    Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
+                    Vintagestory.API.Common.Item heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
 
                     if (heldItem != null)
                     {

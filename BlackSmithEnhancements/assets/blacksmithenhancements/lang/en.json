@@ -12,9 +12,9 @@
 
 
   "item-clothes-hand-blacksmith-gloves": "Blacksmith gloves <font weight=\"bold\" color=\"#c97932\">[Heat resistant]</font>",
-  "itemdesc-clothes-hand-blacksmith-gloves": "Blacksmith gloves will protect you from being burn when picking up hot stuff",
+  "itemdesc-clothes-hand-blacksmith-gloves": "Will protect you from being burnt when picking up hot stuff",
 
   "item-bellow": "Bellow",
-  "game:item-handbooktitle-bellow": "How to Use",
-  "game:item-handbooktext-bellow": "Use on a <font weight=\"bold\"><a href=\"handbook://block-forge\">Forge</a></font> or <font weight=\"bold\"><a href=\"handbook://block-firepit\">Firepit</a></font> to increase the temperature/cooking/smelting."
+  "game:item-handbooktitle-bellow": "How to use",
+  "game:item-handbooktext-bellow": "Use on a <font weight=\"bold\"><a href=\"handbook://block-forge\">Forge</a></font> or <font weight=\"bold\"><a href=\"handbook://block-firepit\">Firepit</a></font> to increase the temperature or speed up cooking/smelting."
 }

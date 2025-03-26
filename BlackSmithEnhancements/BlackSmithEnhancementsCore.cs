@@ -7,6 +7,9 @@ using Vintagestory.GameContent;
 using Vintagestory.API.Client;
 using System.Collections.Generic;
 using System.Drawing;
+using BlackSmithEnhancements.Behavior.Block;
+using BlackSmithEnhancements.Behavior.Item;
+using BlackSmithEnhancements.Item;
 
 namespace BlackSmithEnhancements
 {

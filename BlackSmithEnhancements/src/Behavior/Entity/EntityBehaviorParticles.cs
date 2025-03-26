@@ -2,18 +2,16 @@
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
-using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
-using Vintagestory.GameContent;
 
-namespace BlackSmithEnhancements
+namespace BlackSmithEnhancements.Behavior.Entity
 {
     public class EntityBehaviorParticles : EntityBehavior
     {
         EntityPlayer entityPlayer;
 
-        public EntityBehaviorParticles(Entity entity) : base(entity)
+        public EntityBehaviorParticles(Vintagestory.API.Common.Entities.Entity entity) : base(entity)
         {
         }
 

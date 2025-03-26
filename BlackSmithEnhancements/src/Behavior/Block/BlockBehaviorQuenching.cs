@@ -1,17 +1,16 @@
 ﻿using System;
-using Vintagestory.API.Client;
+using BlackSmithEnhancements.Behavior.Item;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
 
-namespace BlackSmithEnhancements
+namespace BlackSmithEnhancements.Behavior.Block
 {
     public class BlockBehaviorQuenching : BlockBehavior
     {
         private long secondPasted = 360;
 
-        public BlockBehaviorQuenching(Block block) : base(block)
+        public BlockBehaviorQuenching(Vintagestory.API.Common.Block block) : base(block)
         {
         }
     
