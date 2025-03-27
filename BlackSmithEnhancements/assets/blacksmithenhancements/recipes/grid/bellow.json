@@ -2,7 +2,7 @@
   {
     "ingredientPattern": "HWS,_LR,_WS",
     "ingredients": {
-      "H": { "type": "item", "code": "game:hammer-*", "isTool": true  },
+      "H": { "type": "item", "code": "game:hammer-*", "isTool": true, "toolDurabilityCost": 3 },
       "W": { "type": "item", "code": "game:plank-*", "quantity": 1 },
       "L": { "type": "item", "code": "game:leather-normal-plain", "quantity": 1 },
 	  "R": { "type": "item", "code": "game:ingot-lead", "quantity": 1 },
@@ -11,5 +11,18 @@
     "width": 3,
     "height": 3,
     "output": { "type": "item", "code": "blacksmithenhancements:bellow", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "HWS,_LR,_WS",
+    "ingredients": {
+      "H": { "type": "item", "code": "game:hammer-*", "isTool": true, "toolDurabilityCost": 15  },
+      "W": { "type": "item", "code": "game:plank-*", "quantity": 1 },
+      "L": { "type": "item", "code": "game:leather-sturdy-plain", "quantity": 1 },
+      "R": { "type": "item", "code": "game:ingot-steel", "quantity": 1 },
+      "S": { "type": "item", "code": "game:stick", "quantity": 1 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "item", "code": "blacksmithenhancements:bellow-sturdy", "quantity": 1 }
   }
 ]

@@ -1,28 +1,31 @@
-﻿using BlackSmithEnhancements.Behavior.Item;
+﻿using System;
+using System.Linq;
+using BlackSmithEnhancements.Behavior.Item;
 using BlackSmithEnhancements.Item;
 using HarmonyLib;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
+using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Server;
 using Vintagestory.GameContent;
 
 namespace BlackSmithEnhancements.Util
 {
-    [HarmonyPatch(typeof(InventoryBase), "DropSlotIfHot")]
+    [HarmonyPatch(typeof(InventoryBase), nameof(InventoryBase.DropSlotIfHot))]
     public class PlayerDropSlotIfHotPatch
     {
          // Blacksmith Gloves by Arahvin.  Fixed by me //
         //[https://mods.vintagestory.at/show/mod/6581]//
 
         [HarmonyPrefix]
-
         public static bool Gear_Has_Heat_Resistant(ItemSlot slot, IPlayer player)
         {
             if (slot.Empty || player == null || player.WorldData.CurrentGameMode == EnumGameMode.Creative) return false;
             if (player.Entity?
-                    .GetBehavior<EntityBehaviorSeraphInventory>() is not{ Inventory: not null } seraphInventory) 
+                    .GetBehavior<EntityBehaviorPlayerInventory>() is not { Inventory: not null } playerInventory) 
                 return true;
-            foreach (var itemSlot in seraphInventory.Inventory)
+            foreach (var itemSlot in playerInventory.Inventory)
             {
                 if (itemSlot.BackgroundIcon != "gloves")
                 {
@@ -132,6 +135,47 @@ namespace BlackSmithEnhancements.Util
             if (byPlayer.InventoryManager.ActiveHotbarSlot.Empty) return true;
             var heldItem = byPlayer.InventoryManager.ActiveHotbarSlot.Itemstack.Item;
             return heldItem is not ItemBellow;
+        }
+    }
+
+    [HarmonyPatch(typeof(CollectibleObject), nameof(CollectibleObject.OnCreatedByCrafting))]
+    public static class OnCreatedByCraftingPatch
+    {
+        // Stop crafting of items with a temperature above 300 (to encourage quenching)
+        [HarmonyPrefix]
+        public static bool OnCreatedByCrafting_Postfix(
+            ItemSlot[] allInputslots,
+            ItemSlot outputSlot,
+            GridRecipe byRecipe)
+        {
+            if (outputSlot.Empty) return true;
+            if (outputSlot.Inventory?.Api?.World is not { } world) return true;
+            var hotSlots = allInputslots.Where(slot => slot.Itemstack?.GetTemperature(world) > 300.0).ToArray();
+            if (hotSlots.Length == 0) return true;
+            if (world.Side == EnumAppSide.Server && 
+                outputSlot.Inventory is InventoryBasePlayer inventory &&
+                inventory.Player is IServerPlayer serverPlayer
+               )
+            {
+                var sapi = (ICoreServerAPI) world.Api;
+                sapi.SendIngameError(serverPlayer,
+                    "Must quench first",
+                    Lang.Get("ingameerror-mustquenchfirst", hotSlots[0]?.Itemstack?.GetHeldItemName().ToLower()));
+            }
+            outputSlot.Itemstack = null;
+            return false;
+        }
+        
+        private static string GetHeldItemName(this ItemStack stack)
+        {
+            return stack.Collectible.GetHeldItemName(stack);
+        }
+
+        private static float GetTemperature(this ItemStack stack, IWorldAccessor world)
+        {
+            var temperature = stack.Collectible.GetTemperature(world, stack);
+            Console.Error.WriteLine($"temperature: {temperature}");
+            return temperature;
         }
     }
 

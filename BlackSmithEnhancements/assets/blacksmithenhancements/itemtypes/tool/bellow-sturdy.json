@@ -1,0 +1,8 @@
+{
+  "inheritFrom": "itemtypes/tool/bellow",
+  "code": "bellow-sturdy",
+  "textures": {
+    "bellow": { "base": "item/tool/bellow-sturdy" }
+  },
+  "durability": 1750
+}

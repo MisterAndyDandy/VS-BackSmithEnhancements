@@ -72,22 +72,6 @@
               "rotationX": 0.0,
               "rotationY": 0.0,
               "rotationZ": 8.0
-            },
-            "Ponytail1": {
-              "offsetX": 0.0,
-              "offsetY": 0.0,
-              "offsetZ": 0.0,
-              "rotationX": 0.0,
-              "rotationY": 0.0,
-              "rotationZ": -1.0
-            },
-            "Ponytail 2": {
-              "offsetX": 0.0,
-              "offsetY": 0.0,
-              "offsetZ": 0.0,
-              "rotationX": 0.0,
-              "rotationY": 0.0,
-              "rotationZ": -1.0
             }
           }
         },
@@ -154,22 +138,6 @@
               "rotationX": 0.0,
               "rotationY": 0.0,
               "rotationZ": 8.0
-            },
-            "Ponytail1": {
-              "offsetX": 0.0,
-              "offsetY": 0.0,
-              "offsetZ": 0.0,
-              "rotationX": 0.0,
-              "rotationY": 0.0,
-              "rotationZ": -1.0
-            },
-            "Ponytail 2": {
-              "offsetX": 0.0,
-              "offsetY": 0.0,
-              "offsetZ": 0.0,
-              "rotationX": 0.0,
-              "rotationY": 0.0,
-              "rotationZ": -1.0
             }
           }
         }
