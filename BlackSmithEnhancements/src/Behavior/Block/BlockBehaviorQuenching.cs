@@ -106,10 +106,12 @@ namespace BlackSmithEnhancements.Behavior.Block
                 return false;
             if (block.GetBlockEntity<BlockEntityLiquidContainer>(blockSel) is not { } beLiquidContainer)
                 return false;
-            var heldStack = byPlayer.Entity.RightHandItemSlot.Itemstack;
+            var contentStack = GetWaterContent(beLiquidContainer.GetNonEmptyContentStacks());
+            if (contentStack == null) return false;
+            if (!IsValidHeldStack(byPlayer, out var heldStack))
+                return false;
             var temp = heldStack.Collectible.GetTemperature(world, heldStack);
             if (temp < 20.1f) return false;
-            if (!heldStack.Collectible.HasBehavior<ItemBehaviorQuenching>()) return false;
             handling = EnumHandling.PreventDefault;
             if (world.ElapsedMilliseconds - _lastPlaySizzleSoundMilliseconds < 5000) return true;
             _lastPlaySizzleSoundMilliseconds = world.ElapsedMilliseconds;
@@ -126,7 +128,7 @@ namespace BlackSmithEnhancements.Behavior.Block
         ref EnumHandling handling)
         {
             handling = EnumHandling.PreventDefault;
-            return false;
+            return secondsUsed < 0.2f; // Small pause to emulate bubbling?
         }
 
         public override void OnBlockInteractStop(float secondsUsed, IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel,
@@ -134,36 +136,46 @@ namespace BlackSmithEnhancements.Behavior.Block
         {
             if (world.BlockAccessor.GetBlockEntity(blockSel.Position) is not BlockEntityLiquidContainer beLiquidContainer) return;
             handling = EnumHandling.Handled;
-            var heldStack = byPlayer.Entity.RightHandItemSlot.Itemstack;
+            if (!IsValidHeldStack(byPlayer, out var heldStack))
+                return;
             QuenchStack(world, heldStack, byPlayer, blockSel, beLiquidContainer);
         }
 
         public void QuenchStack(IWorldAccessor world, ItemStack heldStack, IPlayer byPlayer, BlockSelection blockSel, BlockEntityLiquidContainer beLiquidContainer)
         {
-            var contentStacks = IsContentWater(beLiquidContainer.GetNonEmptyContentStacks());
-
-            if (contentStacks == null) return;
-
-            var containerBase = (BlockLiquidContainerBase)beLiquidContainer.Block;
-            if (containerBase.GetCurrentLitres(contentStacks) > containerBase.GetContentProps(blockSel.Position).ItemsPerLitre) return;
-
+            var contentStack = GetWaterContent(beLiquidContainer.GetNonEmptyContentStacks());
+            if (contentStack == null) return;
+            if (contentStack.StackSize <= 0) return; // Don't do anything if the container is empty, it should not be
+            var liquidContainer = (BlockLiquidContainerBase)beLiquidContainer.Block;
             var temp = heldStack.Collectible.GetTemperature(world, heldStack);
-            
             var newTemp = GameMath.Max(20, temp - Math.Max(0f, GameMath.Max(0f, world.Rand.Next(10, 100))));
-            heldStack.Collectible.SetTemperature(world, heldStack, newTemp);
-            
-            // Evaporate water
-            if (temp < 100f) return;
             var tempDiff = temp - newTemp;
-            if (tempDiff <= 0) return;
-            var evaporateCount = (int)Math.Ceiling(tempDiff/200 * 0.05f * BlockLiquidContainerBase.GetContainableProps(contentStacks).ItemsPerLitre);
-            containerBase.TryTakeContent(blockSel.Position, evaporateCount);
+            if (tempDiff <= 0) return; // Don't do anything if the temperature has not changed
+            var shouldEvaporate = temp > 100f;
+            // Simply cool down the item if the temperature is below 100
+            if (!shouldEvaporate)
+            {
+                heldStack.Collectible.SetTemperature(world, heldStack, temp - newTemp);
+                return;
+            }
+            var itemsPerLitre = liquidContainer.GetContentProps(blockSel.Position).ItemsPerLitre;
+            var evaporateCount = (int)Math.Ceiling(tempDiff / 200 * 0.05f * itemsPerLitre);
+            var evaporatedLiquid = liquidContainer.TryTakeContent(blockSel.Position, evaporateCount);
+            var evaporatedCount = evaporatedLiquid.StackSize;
+            var newTempDiff = tempDiff * (evaporatedCount / (float)evaporateCount); // Cool only by the amount of liquid that was evaporated
+            heldStack.Collectible.SetTemperature(world, heldStack, temp - newTempDiff);
             var intensity = temp / 1500;
             Particles(world, new Vec3d(beLiquidContainer.Pos.X + 0.5f, beLiquidContainer.Pos.Y + 0.25f, beLiquidContainer.Pos.Z + 0.5f), InitializeSteamEffect(intensity), InitializeWaterSplashEffect());
             world.PlaySoundAt(new AssetLocation("sounds/pourmetal"), blockSel.FullPosition.X, blockSel.FullPosition.Y, blockSel.FullPosition.Z, byPlayer, 1.5f, 4f, 0.8f*intensity);
         }
+        
+        private static bool IsValidHeldStack(IPlayer byPlayer, out ItemStack heldStack)
+        {
+            heldStack = byPlayer.Entity.RightHandItemSlot.Itemstack;
+            return heldStack != null && heldStack.Collectible.HasBehavior<ItemBehaviorQuenching>();
+        }
 
-        private static ItemStack IsContentWater(ItemStack[] contentStacks) {
+        private static ItemStack GetWaterContent(ItemStack[] contentStacks) {
             if (contentStacks.Length == 0)
                 return null;
             var itemStack = contentStacks.Length > 1 ? contentStacks[0] ?? contentStacks[1] : contentStacks[0];
