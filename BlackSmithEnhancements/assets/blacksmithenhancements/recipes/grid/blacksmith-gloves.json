@@ -4,7 +4,7 @@
     "ingredients": {
       "L": {
         "type": "item",
-        "code": "game:leather-plain",
+        "code": "game:leather-normal-plain",
         "quantity": 3
       },
       "T": {

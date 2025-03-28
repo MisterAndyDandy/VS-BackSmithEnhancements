@@ -1,18 +1,17 @@
 ﻿using HarmonyLib;
 using Vintagestory.API.Common;
 using Vintagestory.API.Util;
-using System.Linq;
 using System.Reflection;
 using Vintagestory.GameContent;
-using Vintagestory.API.Client;
-using System.Collections.Generic;
-using System.Drawing;
+using BlackSmithEnhancements.Behavior.Block;
+using BlackSmithEnhancements.Behavior.Item;
+using BlackSmithEnhancements.Item;
 
 namespace BlackSmithEnhancements
 {
-    class BlackSmithEnhancementsCore : ModSystem
+    internal class BlackSmithEnhancementsCore : ModSystem
     {
-        Harmony harmony = new Harmony("com.misterandydandy.black.smith.addons");
+        private Harmony harmony = new Harmony("com.misterandydandy.black.smith.addons");
 
         public override void Start(ICoreAPI api)
         {
@@ -38,7 +37,7 @@ namespace BlackSmithEnhancements
         {
             base.AssetsLoaded(api);
 
-            foreach (Block block in api.World.Blocks)
+            foreach (var block in api.World.Blocks)
             {
                 if (block is BlockBarrel or BlockBucket)
                 {
@@ -68,9 +67,9 @@ namespace BlackSmithEnhancements
                
             }
 
-            foreach (SmithingRecipe smithing in api.GetSmithingRecipes())
+            foreach (var smithing in api.GetSmithingRecipes())
             {
-                ItemStack itemStack = smithing.Output.ResolvedItemstack;
+                var itemStack = smithing.Output.ResolvedItemstack;
 
                 if (itemStack.Collectible.HasBehavior<ItemBehaviorQuenching>())
                 {
@@ -81,11 +80,11 @@ namespace BlackSmithEnhancements
 
             }
 
-            foreach (CollectibleObject colObj in api.World.Collectibles)
+            foreach (var colObj in api.World.Collectibles)
             {
                 if (colObj.HasBehavior<ItemBehaviorQuenching>()) continue;
 
-                bool flag = colObj.Attributes?.IsTrue("forgable") ?? false;
+                var flag = colObj.Attributes?.IsTrue("forgable") ?? false;
                
                 if (colObj.Tool.HasValue || colObj is ItemIngot or ItemMetalPlate or ItemWorkItem or BlockSmeltedContainer || flag)
                 {
